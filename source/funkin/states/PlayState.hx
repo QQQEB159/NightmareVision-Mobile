@@ -46,6 +46,9 @@ import funkin.game.StoryMeta;
 #if VIDEOS_ALLOWED
 import funkin.video.FunkinVideoSprite;
 #end
+import mobile.TouchButton;
+import mobile.TouchPad;
+import mobile.input.MobileInputID;
 
 class PlayState extends MusicBeatState
 {
@@ -691,6 +694,17 @@ class PlayState extends MusicBeatState
 		
 		meta = Metadata.getSong();
 		
+		#if !android
+		addTouchPad("NONE", "P");
+		addTouchPadCamera();
+		touchPad.visible = true;
+		#end
+		addMobileControls();
+		if(!ClientPrefs.controllerMode) {
+		mobileControls.onButtonDown.add(onButtonPress);
+		mobileControls.onButtonUp.add(onButtonRelease);
+		}
+		
 		generateSong(SONG.song);
 		modManager = new ModManager(this);
 		scripts.set("modManager", modManager);
@@ -1105,7 +1119,7 @@ class PlayState extends MusicBeatState
 			scripts.call('postModifierRegister', []);
 			
 			new FlxTimer().start(countdownDelay, (t:FlxTimer) -> {
-				startedCountdown = true;
+				startedCountdown = mobileControls.instance.visible = true;
 				Conductor.songPosition = 0;
 				Conductor.songPosition -= Conductor.crotchet * 5;
 				scripts.call('onCountdownStarted', []);
@@ -1861,7 +1875,7 @@ class PlayState extends MusicBeatState
 		Conductor.visualPosition = getVisualPosition();
 		checkEventNote();
 		
-		if (controls.PAUSE && startedCountdown && canPause)
+		if ((controls.PAUSE || #if android FlxG.android.justReleased.BACK #else touchPad.buttonP.justPressed #end) && startedCountdown && canPause)
 		{
 			final ret:Dynamic = scripts.call('onPause', []);
 			if (ret != Globals.Function_Stop) openPauseMenu();
@@ -2778,6 +2792,8 @@ class PlayState extends MusicBeatState
 		deathCounter = 0;
 		seenCutscene = false;
 		
+		mobileControls.instance.visible = #if !android touchPad.visible = #end false;
+		
 		#if ACHIEVEMENTS_ALLOWED
 		if (achievementObj != null)
 		{
@@ -3059,6 +3075,104 @@ class PlayState extends MusicBeatState
 		return -1;
 	}
 	
+	private function onButtonPress(button:TouchButton):Void
+	{
+		if (button.IDs.filter(id -> id.toString().startsWith("EXTRA")).length > 0)
+			return;
+
+		var buttonCode:Int = (button.IDs[0].toString().startsWith('NOTE')) ? button.IDs[0] : button.IDs[1];
+		
+		if (cpuControlled || paused || !startedCountdown) return;
+
+		if (buttonCode > -1 && button.justPressed)
+		{
+			if (!boyfriend.stunned && generatedMusic && !endingSong)
+			{
+				// more accurate hit time for the ratings?
+				var lastTime:Float = Conductor.songPosition;
+				Conductor.songPosition = FlxG.sound.music.time;
+				
+				var canMiss:Bool = !ClientPrefs.ghostTapping;
+				
+				var pressNotes:Array<Note> = [];
+				
+				var ghostTapped:Bool = true;
+				for (field in playFields.members)
+				{
+					if (field.playerControls && field.inControl && !field.autoPlayed)
+					{
+						var sortedNotesList:Array<Note> = field.getTapNotes(buttonCode);
+						sortedNotesList.sort((a, b) -> Std.int(a.strumTime - b.strumTime));
+						
+						if (sortedNotesList.length > 0)
+						{
+							pressNotes.push(sortedNotesList[0]);
+							field.noteHitCallback.dispatch(sortedNotesList[0], field);
+						}
+					}
+				}
+				
+				if (pressNotes.length == 0)
+				{
+					scripts.call('onGhostTap', [buttonCode]);
+					if (canMiss)
+					{
+						noteMissPress(buttonCode);
+						scripts.call('noteMissPress', [buttonCode]);
+					}
+				}
+				
+				// this is for the "Just the Two of Us" achievement - Shadow Mario
+				keysPressed[buttonCode] = true;
+				
+				// more accurate hit time for the ratings? part 2 (Now that the calculations are done, go back to the time it was before for not causing a note stutter)
+				Conductor.songPosition = lastTime;
+			}
+			
+			for (field in playFields.members)
+			{
+				if (field.inControl && !field.autoPlayed && field.playerControls)
+				{
+					var spr:StrumNote = field.members[buttonCode];
+					if (spr != null && spr.animation.curAnim.name != 'confirm')
+					{
+						spr.playAnim('pressed');
+						spr.resetAnim = 0;
+					}
+				}
+			}
+			
+			scripts.call('onKeyPress', [buttonCode]);
+			scripts.call('onButtonPress', [buttonCode]);
+		}
+	}
+
+	private function onButtonRelease(button:TouchButton):Void
+	{
+		if (button.IDs.filter(id -> id.toString().startsWith("EXTRA")).length > 0)
+			return;
+
+		var buttonCode:Int = (button.IDs[0].toString().startsWith('NOTE')) ? button.IDs[0] : button.IDs[1];
+
+		if (startedCountdown && !paused && buttonCode > -1)
+		{
+			for (field in playFields.members)
+			{
+				if (field.inControl && !field.autoPlayed && field.playerControls)
+				{
+					var spr:StrumNote = field.members[buttonCode];
+					if (spr != null)
+					{
+						spr.playAnim('static');
+						spr.resetAnim = 0;
+					}
+				}
+			}
+			scripts.call('onKeyRelease', [buttonCode]);
+			scripts.call('onButtonRelease', [buttonCode]);
+		}
+	}
+	
 	// Hold notes
 	function keyShit():Void
 	{
@@ -3069,6 +3183,8 @@ class PlayState extends MusicBeatState
 		var left = controls.NOTE_LEFT;
 		var dodge = controls.NOTE_DODGE;
 		
+		var controlHoldArray:Array<Bool> = [left, down, up, right, dodge];
+		
 		// TO DO: Find a better way to handle controller inputs, this should work for now
 		if (ClientPrefs.controllerMode)
 		{
@@ -3076,7 +3192,8 @@ class PlayState extends MusicBeatState
 				controls.NOTE_LEFT_P,
 				controls.NOTE_DOWN_P,
 				controls.NOTE_UP_P,
-				controls.NOTE_RIGHT_P
+				controls.NOTE_RIGHT_P,
+				controls.NOTE_DODGE_P
 			];
 			if (controlArray.contains(true)) for (i in 0...controlArray.length)
 				if (controlArray[i]) onKeyPress(new KeyboardEvent(KeyboardEvent.KEY_DOWN, true, true, -1, keysArray[i][0]));
@@ -3091,14 +3208,14 @@ class PlayState extends MusicBeatState
 				if (!daNote.playField.autoPlayed && daNote.playField.inControl && daNote.playField.playerControls)
 				{
 					if (daNote.isSustainNote
-						&& FlxG.keys.anyPressed(keysArray[daNote.noteData])
+						&& controlHoldArray[daNote.noteData]
 						&& daNote.canBeHit
 						&& !daNote.tooLate
 						&& !daNote.wasGoodHit) daNote.playField.noteHitCallback.dispatch(daNote, daNote.playField);
 				}
 			});
 			
-			if (keysArray.contains(true) && !endingSong)
+			if (controlHoldArray.contains(true) && !endingSong)
 			{
 				#if ACHIEVEMENTS_ALLOWED
 				var achieve:String = checkForAchievement(['oversinging']);
@@ -3117,7 +3234,8 @@ class PlayState extends MusicBeatState
 				controls.NOTE_LEFT_R,
 				controls.NOTE_DOWN_R,
 				controls.NOTE_UP_R,
-				controls.NOTE_RIGHT_R
+				controls.NOTE_RIGHT_R,
+				controls.NOTE_DODGE_R
 			];
 			if (controlArray.contains(true))
 			{

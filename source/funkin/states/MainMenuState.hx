@@ -131,6 +131,7 @@ class MainMenuState extends MusicBeatState
 				}
 			}
 			#end
+		addTouchPad("UP_DOWN", "A_B_E");
 		}
 		super.create();
 		
@@ -208,8 +209,8 @@ class MainMenuState extends MusicBeatState
 					menuItems.forEachAlive(s -> if (s != selectedObj) FlxTween.tween(s, {alpha: 0}, 0.4, {ease: FlxEase.quadOut}));
 				}
 				
-				#if desktop
-				else if (FlxG.keys.anyJustPressed(debugKeys))
+				#if sys
+				else if (FlxG.keys.anyJustPressed(debugKeys) || touchPad.buttonE.justPressed)
 				{
 					selectedSomethin = true;
 					FlxG.switchState(MasterEditorMenu.new);

@@ -118,6 +118,8 @@ class ControlsSubState extends MusicBeatSubstate
 		scriptGroup.set('nextAccept', nextAccept);
 		scriptGroup.set('bg', bg);
 		scriptGroup.call('onCreatePost', []);
+		
+		addTouchPad("LEFT_FULL", "B");
 	}
 	
 	var leaving:Bool = false;
