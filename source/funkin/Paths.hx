@@ -40,7 +40,7 @@ class Paths
 	// thinking of removing parentfolder its pointless ?
 	public static function getPath(file:String, ?type:AssetType = TEXT, ?parentFolder:String, checkMods:Bool = false):String
 	{
-		if (library == "mobile")
+		if (parentFolder == "mobile")
 			return getPrimaryPath('mobile/$file');
 		
 		#if MODS_ALLOWED
