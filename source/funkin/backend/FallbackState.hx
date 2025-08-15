@@ -37,6 +37,8 @@ class FallbackState extends MusicBeatState
 		text.setFormat(Paths.font('vcr.ttf'), 32, FlxColor.WHITE, CENTER, OUTLINE, FlxColor.BLACK);
 		add(text);
 		
+		addTouchPad("NONE", "A");
+		
 		super.create();
 	}
 	
