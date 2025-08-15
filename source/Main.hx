@@ -121,12 +121,7 @@ class Main extends Sprite
 	static function onResize(w:Int, h:Int)
 	{
 		final scale:Float = Math.max(1, Math.min(w / FlxG.width, h / FlxG.height));
-		if (DebugDisplay.instance != null)
-		{
-			#if mobile
-			DebugDisplay.instance.positionFPS(10, 3, Math.min(w / FlxG.width, h / FlxG.height));
-			#end
-		}
+		
 		if (FlxG.cameras != null)
 		{
 			for (i in FlxG.cameras.list)

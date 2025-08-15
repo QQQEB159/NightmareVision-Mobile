@@ -71,8 +71,8 @@ class DebugDisplay extends Sprite
 		textField.multiline = true;
 		textField.text = "FPS: ";
 		
-		addChild(textUnderlay);
-		addChild(textField);
+		FlxG.game.addChild(textUnderlay);
+		FlxG.game.addChild(textField);
 		
 		this.x = x;
 		this.y = y;
@@ -126,11 +126,5 @@ class DebugDisplay extends Sprite
 		#else
 		return (cast openfl.system.System.totalMemoryNumber : UInt);
 		#end
-	}
-	
-	public inline function positionFPS(X:Float, Y:Float, ?scale:Float = 1){
- 		scaleX = scaleY = #if mobile (scale > 1 ? scale : 1) #else (scale < 1 ? scale : 1) #end;
- 		x = FlxG.game.x + X;
- 		y = FlxG.game.y + Y;
 	}
 }
