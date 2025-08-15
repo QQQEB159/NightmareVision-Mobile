@@ -159,7 +159,7 @@ class Main extends Sprite
 	}
 }
 
-#if CRASH_HANDLER
+#if sys
 class FNFGame extends FlxGame
 {
 	private static function crashGame()
