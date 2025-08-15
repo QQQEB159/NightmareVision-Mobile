@@ -9,7 +9,7 @@ import flixel.util.FlxColor;
 import flixel.tweens.FlxTween;
 
 import funkin.backend.Difficulty;
-import funkin.states.editors.ChartingState;
+import funkin.states.editors.ChartEditorState;
 import funkin.data.WeekData;
 import funkin.states.*;
 import funkin.states.substates.*;
@@ -18,6 +18,8 @@ import funkin.objects.*;
 
 class FreeplayState extends MusicBeatState
 {
+	public static var vocals:Null<FlxSound> = null;
+	
 	public var debugBG:FlxSprite;
 	public var debugTxt:FlxText;
 	
@@ -90,8 +92,8 @@ class FreeplayState extends MusicBeatState
 		
 		setUpScript();
 		
-		script.set('SongMetadata', SongMetadata);
-		script.set('WeekData', WeekData);
+		scriptGroup.set('SongMetadata', SongMetadata);
+		scriptGroup.set('WeekData', WeekData);
 		
 		if (isHardcodedState())
 		{
@@ -176,8 +178,9 @@ class FreeplayState extends MusicBeatState
 			debugBG.alpha = 0;
 			add(debugBG);
 			
-			debugTxt = new FlxText(50, 0, FlxG.width - 100, '', 36);
-			debugTxt.setFormat(Paths.font("vcr.ttf"), 36, FlxColor.WHITE, CENTER, OUTLINE_FAST, FlxColor.BLACK);
+			debugTxt = new FlxText(25, 0, FlxG.width - 50, '', 32);
+			debugTxt.setFormat(Paths.font("vcr.ttf"), 32, FlxColor.WHITE, CENTER, OUTLINE_FAST, FlxColor.BLACK);
+			debugTxt.borderSize = 2;
 			debugTxt.screenCenter(Y);
 			add(debugTxt);
 			
@@ -185,7 +188,7 @@ class FreeplayState extends MusicBeatState
 			changeDiff();
 		}
 		super.create();
-		script.call('onCreatePost', []);
+		scriptGroup.call('onCreatePost', []);
 	}
 	
 	override function closeSubState()
@@ -224,8 +227,6 @@ class FreeplayState extends MusicBeatState
 			}
 	}*/
 	var instPlaying:Int = -1;
-	
-	private static var vocals:FlxSound = null;
 	
 	var holdTime:Float = 0;
 	
@@ -313,8 +314,9 @@ class FreeplayState extends MusicBeatState
 					destroyFreeplayVocals();
 					FlxG.sound.music.volume = 0;
 					Mods.currentModDirectory = songs[curSelected].folder;
-					var poop:String = Highscore.formatSong(songs[curSelected].songName.toLowerCase(), curDifficulty);
-					PlayState.SONG = Song.loadFromJson(poop, songs[curSelected].songName.toLowerCase());
+					PlayState.SONG = Chart.fromSong(songs[curSelected].songName, curDifficulty);
+					
+					// ??? why would you ever to do rewrite this
 					if (PlayState.SONG.needsVoices) vocals = new FlxSound().loadEmbedded(Paths.voices(PlayState.SONG.song));
 					else vocals = new FlxSound();
 					
@@ -330,18 +332,17 @@ class FreeplayState extends MusicBeatState
 			else if (controls.ACCEPT)
 			{
 				persistentUpdate = false;
-				var songLowercase:String = Paths.formatToSongPath(songs[curSelected].songName);
-				var poop:String = Highscore.formatSong(songLowercase, curDifficulty);
 				
 				try
 				{
-					PlayState.SONG = Song.loadFromJson(poop, songLowercase);
+					// todo write a func to ahndel this
+					PlayState.SONG = Chart.fromSong(songs[curSelected].songName, curDifficulty);
 					PlayState.isStoryMode = false;
-					PlayState.storyDifficulty = curDifficulty;
+					PlayState.storyMeta.difficulty = curDifficulty;
 				}
 				catch (e)
 				{
-					final message = 'Failed to load song: [$poop]\ndoes the chart exist?';
+					final message = 'Failed to load song.\nException: ${e.toString()}';
 					debugBG.alpha = 0.7;
 					debugTxt.text = message;
 					debugTxt.screenCenter(Y);
@@ -358,11 +359,11 @@ class FreeplayState extends MusicBeatState
 				
 				if (FlxG.keys.pressed.SHIFT)
 				{
-					CoolUtil.loadAndSwitchState(ChartingState.new);
+					FlxG.switchState(ChartEditorState.new);
 				}
 				else
 				{
-					CoolUtil.loadAndSwitchState(PlayState.new);
+					FlxG.switchState(PlayState.new);
 				}
 				
 				FlxG.sound.music.volume = 0;
@@ -404,7 +405,7 @@ class FreeplayState extends MusicBeatState
 		intendedRating = Highscore.getRating(songs[curSelected].songName, curDifficulty);
 		#end
 		
-		PlayState.storyDifficulty = curDifficulty;
+		PlayState.storyMeta.difficulty = curDifficulty;
 		diffText.text = '< ' + Difficulty.getCurDifficulty() + ' >';
 		positionHighscore();
 	}
@@ -456,7 +457,7 @@ class FreeplayState extends MusicBeatState
 			}
 			
 			Mods.currentModDirectory = songs[curSelected].folder;
-			PlayState.storyWeek = songs[curSelected].week;
+			PlayState.storyMeta.curWeek = songs[curSelected].week;
 			
 			Difficulty.reset();
 			

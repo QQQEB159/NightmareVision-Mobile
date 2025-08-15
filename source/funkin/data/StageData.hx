@@ -2,11 +2,8 @@ package funkin.data;
 
 import haxe.Json;
 
-import funkin.data.Song;
-
 typedef StageFile =
 {
-	var directory:String;
 	var defaultZoom:Float;
 	var isPixelStage:Bool;
 	
@@ -21,30 +18,19 @@ typedef StageFile =
 	var camera_speed:Null<Float>;
 }
 
+@:nullSafety
 class StageData
 {
-	public static var forceNextDirectory:Null<String> = null;
-	
-	public static function loadDirectory(SONG:SwagSong)
-	{
-		var stage:String = SONG.stage ?? 'stage';
-		
-		var stageFile:StageFile = getStageFile(stage);
-		
-		forceNextDirectory = stageFile?.directory ?? '';
-	}
-	
 	public static function getStageFile(stage:String):Null<StageFile>
 	{
 		var path = Paths.getPath('stages/$stage/data.json', TEXT, null, true);
 		if (!FunkinAssets.exists(path, TEXT)) path = Paths.getPath('stages/$stage.json', TEXT, null, true);
 		
-		return FunkinAssets.exists(path, TEXT) ? cast Json.parse(FunkinAssets.getContent(path)) : null;
+		return FunkinAssets.exists(path, TEXT) ? cast FunkinAssets.parseJson(FunkinAssets.getContent(path)) : null;
 	}
 	
 	public static function generateDefault():StageFile return
 		{
-			directory: "",
 			isPixelStage: false,
 			defaultZoom: 0.8,
 			boyfriend: [500, 100],

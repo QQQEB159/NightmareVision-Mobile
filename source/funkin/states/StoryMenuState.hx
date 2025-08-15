@@ -188,12 +188,12 @@ class StoryMenuState extends MusicBeatState
 		}
 		
 		super.create();
-		script.call('onCreatePost', []);
+		scriptGroup.call('onCreatePost', []);
 	}
 	
 	override function closeSubState()
 	{
-		script.call('onCloseSubState', []);
+		scriptGroup.call('onCloseSubState', []);
 		if (isHardcodedState())
 		{
 			persistentUpdate = true;
@@ -204,7 +204,7 @@ class StoryMenuState extends MusicBeatState
 	
 	override function update(elapsed:Float)
 	{
-		script.call('onUpdate', [elapsed]);
+		scriptGroup.call('onUpdate', [elapsed]);
 		
 		if (isHardcodedState())
 		{
@@ -273,7 +273,7 @@ class StoryMenuState extends MusicBeatState
 				lock.visible = (lock.y > FlxG.height / 2);
 			});
 		}
-		script.call('onUpdatePost', [elapsed]);
+		scriptGroup.call('onUpdatePost', [elapsed]);
 	}
 	
 	// override public function beatHit(){
@@ -310,20 +310,27 @@ class StoryMenuState extends MusicBeatState
 			}
 			
 			// Nevermind that's stupid lmao
-			PlayState.storyPlaylist = songArray;
+			PlayState.storyMeta.playlist = songArray;
 			PlayState.isStoryMode = true;
 			selectedWeek = true;
 			
 			var diffic = Difficulty.getDifficultyFilePath(curDifficulty);
 			if (diffic == null) diffic = '';
 			
-			PlayState.storyDifficulty = curDifficulty;
+			PlayState.storyMeta.difficulty = curDifficulty;
 			
-			PlayState.SONG = Song.loadFromJson(PlayState.storyPlaylist[0].toLowerCase() + diffic, PlayState.storyPlaylist[0].toLowerCase());
-			PlayState.campaignScore = 0;
-			PlayState.campaignMisses = 0;
+			PlayState.SONG = Chart.fromSong(PlayState.storyMeta.playlist[0], PlayState.storyMeta.difficulty);
+			
+			PlayState.storyMeta.score = 0;
+			PlayState.storyMeta.misses = 0;
 			new FlxTimer().start(1, function(tmr:FlxTimer) {
-				CoolUtil.loadAndSwitchState(PlayState.new, true);
+				if (FlxG.sound.music != null)
+				{
+					FlxG.sound.music.onComplete = null;
+					FlxG.sound.music.stop();
+				}
+				
+				FlxG.switchState(PlayState.new);
 				FreeplayState.destroyFreeplayVocals();
 			});
 		}
@@ -332,7 +339,7 @@ class StoryMenuState extends MusicBeatState
 			FlxG.sound.play(Paths.sound('cancelMenu'));
 		}
 		
-		script.call('onSelectWeek', [weekIsLocked(loadedWeeks[curWeek].fileName)]);
+		scriptGroup.call('onSelectWeek', [weekIsLocked(loadedWeeks[curWeek].fileName)]);
 	}
 	
 	var tweenDifficulty:FlxTween;
@@ -372,7 +379,7 @@ class StoryMenuState extends MusicBeatState
 		intendedScore = Highscore.getWeekScore(loadedWeeks[curWeek].fileName, curDifficulty);
 		#end
 		
-		script.call('onChangeDifficulty', [change]);
+		scriptGroup.call('onChangeDifficulty', [change]);
 	}
 	
 	var lerpScore:Int = 0;
@@ -413,7 +420,7 @@ class StoryMenuState extends MusicBeatState
 		{
 			bgSprite.loadGraphic(Paths.image('menubackgrounds/menu_' + assetName));
 		}
-		PlayState.storyWeek = curWeek;
+		PlayState.storyMeta.curWeek = curWeek;
 		
 		Difficulty.reset();
 		var diffStr:String = WeekData.getCurrentWeek().difficulties;
@@ -457,7 +464,7 @@ class StoryMenuState extends MusicBeatState
 		}
 		updateText();
 		
-		script.call('onChangeWeek', [change]);
+		scriptGroup.call('onChangeWeek', [change]);
 	}
 	
 	function weekIsLocked(name:String):Bool

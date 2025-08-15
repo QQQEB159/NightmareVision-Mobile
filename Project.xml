@@ -2,7 +2,7 @@
 <project>
 	<!-- _________________________ Application Settings _________________________ -->
 
-	<app title="Friday n Fnightfunkin" file="Friday n Fnightfunkin" packageName="com.shadowmario.psychengine" package="com.shadowmario.psychengine" main="Main" version="0.2.7" company="ShadowMario" />
+	<app title="Friday n Fnightfunkin" file="Friday n Fnightfunkin" packageName="com.funny.nmv" package="com.funny.nmv" main="Main" version="0.2.7" company="ShadowMario" />
 
 	<!--Switch Export with Unique ApplicationID and Icon-->
 	<set name="APP_ID" value="0x0100f6c013bbc000" />
@@ -21,13 +21,13 @@
 	<!-- ____________________________ Window Settings ___________________________ -->
 
 	<!--These window settings apply to all targets-->
-	<window width="1280" height="720" fps="60" background="#000000" hardware="true" vsync="false" />
+	<window width="1280" height="720" fps="60" background="#000000" hardware="true" vsync="false" allow-high-dpi="true" />
 
 	<!--Desktop-specific-->
 	<window if="desktop" orientation="landscape" fullscreen="false" resizable="true" vsync="false"/>
 
 	<!--Mobile-specific-->
-	<window if="mobile" orientation="landscape" fullscreen="true" width="0" height="0" resizable="false"/>
+	<window if="mobile" orientation="landscape" fullscreen="true" resizable="false" allow-shaders="true" require-shaders="true" allow-high-dpi="true" />
 
 	<!--Switch-specific-->
 	<window if="switch" orientation="landscape" fullscreen="true" width="0" height="0" resizable="true" />
@@ -49,12 +49,11 @@
 	<!-- <define name="ASSET_REDIRECT" if="debug" /> -->
 	
 	<!--ENGINE CUSTOMIZATION-->
-	<define name="MODS_ALLOWED" if="desktop" />
-	<define name="LUA_ALLOWED" if="cpp" />
+	<define name="MODS_ALLOWED" if="desktop || mobile" />
 	<define name="VIDEOS_ALLOWED" if="cpp" />
-	<define name="DISCORD_ALLOWED" if="cpp"/>
+	<define name="DISCORD_ALLOWED" if="desktop"/>
 
-	<assets path='assets/embeds' rename='assets' embed="true" />
+	<assets path='assets/embeds' rename='assets' embed="false" />
 	<assets path="assets/game" rename="assets"/>
 
 	<assets path='content' embed='false' if="MODS_ALLOWED"/>
@@ -74,15 +73,14 @@
 	<haxelib name="flixel-addons"/>
 	<haxelib name="flixel-ui"/>
 
-	<haxelib name="flxanimate"/>
-
-	<!-- <haxelib name="haxeui-core" /> -->
-	<!-- <haxelib name="haxeui-flixel" /> -->
-	
 	<haxelib name="hscript-iris"/>
 
-	<!--Extra Libraries-->
-	<haxelib name="linc_luajit" if="LUA_ALLOWED"/>
+	<haxelib name="flixel-animate"/>
+	<haxelib name="moonchart"/>
+
+	<haxelib name="haxeui-core" />
+	<haxelib name="haxeui-flixel" />
+
 	<haxelib name="discord_rpc" if="DISCORD_ALLOWED"/>
 	<haxelib name="hxvlc" if="VIDEOS_ALLOWED"/>
 
@@ -90,15 +88,19 @@
 
 	<haxeflag name="--macro" value="addMetadata('@:build(funkin.backend.macro.FlxMacro.buildFlxSprite())', 'flixel.FlxSprite')" />
 	<haxeflag name="--macro" value="addMetadata('@:build(funkin.backend.macro.FlxMacro.buildFlxBasic())', 'flixel.FlxBasic')" />
+	<haxeflag name="--macro" value="addMetadata('@:build(funkin.backend.macro.FlxMacro.buildFlxCamera())', 'flixel.FlxCamera')" />
+
 	
 	<haxeflag name="--macro" value="include('funkin')" />
 	<haxeflag name="--macro" value="include('flixel.addons',true,['flixel.addons.nape.*','flixel.addons.editors.*'])" />
+	
 	<haxeflag name="-dce no" />
 
 	<!-- ______________________________ Haxedefines _____________________________ -->
 
 	<!--Needed for haxeui-->
 	<haxedef name="haxeui_dont_impose_base_class"/>
+	<haxedef name="haxeui_focus_out_on_click"/>
 
 	<!--Needed for better error reporting with hscript-->
 	<define name="hscriptPos"/>
@@ -113,18 +115,21 @@
 		<!-- <haxedef name="HXCPP_TRACY_INCLUDE_CALLSTACKS"/> -->
 	</section>
 
-	<!--Enable for better crash handling/reporting-->
-	<haxedef name="CRASH_HANDLER" if="desktop release"/>
+	<section if="cpp">
+		<haxedef name="HXCPP_CHECK_POINTER" />
+		<haxedef name="HXCPP_STACK_LINE" />
+		<haxedef name="HXCPP_STACK_TRACE" />
+		<haxedef name="HXCPP_CATCH_SEGV" />
+	</section>
 
-	<haxedef name="HXCPP_CHECK_POINTER" if="CRASH_HANDLER" />
-	<haxedef name="HXCPP_STACK_LINE" if="CRASH_HANDLER" />
-	<haxedef name="HXCPP_STACK_TRACE" if="CRASH_HANDLER" />
+        <!-- Allow Access to Engine Files in MOBILE -->
+	<haxedef name="SHARE_MOBILE_FILES" if="mobile" />
+		
+	<!-- Do whatever you want I'm tired uninstall and install everytime -->
+	<certificate path="key.keystore" password="psychengine" alias="psychport" alias-password="psychengine" if="android" unless="debug" />
 
 	<!--Disables all tracing abilities. Enable this for a small performance improvement-->
 	<!-- <define name="DISABLE_TRACES" if="desktop release"/> -->
-
-	<!--Needed for lua-->
-	<haxedef name="NO_PRECOMPILED_HEADERS" if="LUA_ALLOWED"/>
 
 	<!--Remove the legacy health system-->
 	<haxedef name="FLX_NO_HEALTH" />
@@ -167,5 +172,4 @@
 	<icon path="projFiles/icon/icon32.png" size='32'/>
 	<icon path="projFiles/icon/icon64.png" size='64'/>
 	<icon path="projFiles/icon/iconOG.png" />
-
 </project>

@@ -2,10 +2,6 @@ package funkin.data;
 
 import haxe.Json;
 
-import flixel.math.FlxPoint;
-
-import funkin.objects.*;
-
 // havent implemented this
 typedef Animation =
 {
@@ -55,15 +51,54 @@ typedef NoteSkinData =
 	
 	?singAnimations:Array<String>,
 	?scale:Float,
-	?splashesEnabled:Bool
+	?splashesEnabled:Bool,
+	?inGameColoring:Bool
 }
 
-class NoteSkinHelper
+// should be rewritten ngl
+// i agree its so ugly please
+class NoteSkinHelper implements IFlxDestroyable
 {
-	static final defaultTexture:String = 'NOTE_assets';
-	static final defaultSplashTexture:String = 'noteSplashes';
+	public static var keys:Int = DEFAULT_KEYS;
 	
-	static final defaultNoteAnimations:Array<Array<Animation>> = [
+	// to do do this instead
+	public static var instance:Null<NoteSkinHelper> = null;
+	
+	public static function init():Void
+	{
+		if (instance == null) instance = new NoteSkinHelper(Paths.getPath('noteskins/default.json', TEXT));
+	}
+	
+	public var data(default, null):NoteSkinData;
+	
+	public function new(path:String)
+	{
+		loadFromPath(path);
+	}
+	
+	public function destroy()
+	{
+		data = null;
+	}
+	
+	public function loadFromPath(path:String, keyCount:Int = -1)
+	{
+		data = cast FunkinAssets.parseJson(FunkinAssets.getContent(path).trim()) ?? {};
+		
+		if (keyCount != -1) keys = keyCount;
+		resolveData(data);
+	}
+	
+	public static var arrowSkins:Array<String> = [];
+	
+	// constants
+	public static final DEFAULT_KEYS:Int = 4;
+	
+	static final DEFAULT_TEXTURE:String = 'NOTE_assets';
+	
+	static final DEFAULT_SPLASH_TEXTURE:String = 'noteSplashes';
+	
+	static final DEFAULT_NOTE_ANIMATIONS:Array<Array<Animation>> = [
 		[
 			{
 				anim: "scroll",
@@ -145,7 +180,7 @@ class NoteSkinHelper
 			}
 		]
 	];
-	static final defaultReceptorAnimations:Array<Array<Animation>> = [
+	static final DEFAULT_RECEPTOR_ANIMATIONS:Array<Array<Animation>> = [
 		[
 			{
 				anim: 'static',
@@ -227,11 +262,11 @@ class NoteSkinHelper
 			}
 		]
 	];
-	static final defaultNoteSplashAnimations:Array<Animation> = [
-		{anim: "note0", xmlName: "note splash purple", offsets: [0, 0]},
-		{anim: "note1", xmlName: "note splash blue", offsets: [0, 0]},
-		{anim: "note2", xmlName: "note splash green", offsets: [0, 0]},
-		{anim: "note3", xmlName: "note splash red", offsets: [0, 0]}
+	public static final DEFAULT_NOTESPLASH_ANIMATIONS:Array<Animation> = [
+		{anim: "note0", xmlName: "note splash purple", offsets: [4, 15]},
+		{anim: "note1", xmlName: "note splash blue", offsets: [13, 15]},
+		{anim: "note2", xmlName: "note splash green", offsets: [16, 15]},
+		{anim: "note3", xmlName: "note splash red", offsets: [22, 15]}
 	];
 	
 	public static final fallbackReceptorAnims:Array<Animation> = [
@@ -251,7 +286,7 @@ class NoteSkinHelper
 			offsets: [0, 0]
 		}
 	];
-
+	
 	public static final fallbackNoteAnims:Array<Animation> = [
 		{
 			anim: "scroll",
@@ -269,7 +304,7 @@ class NoteSkinHelper
 			offsets: [0, 0]
 		}
 	];
-
+	
 	public static function fallbackNote(id:Int)
 	{
 		var anim:Array<Animation> = [
@@ -289,10 +324,10 @@ class NoteSkinHelper
 				offsets: [0, 0]
 			}
 		];
-
+		
 		for (i in anim)
 			i.anim = '${i.anim}${Std.string(id)}';
-
+			
 		return anim;
 	}
 	
@@ -302,86 +337,34 @@ class NoteSkinHelper
 		anim.anim = '${anim.anim}${Std.string(id)}';
 		return anim;
 	}
-
+	
 	static final defaultSingAnimations:Array<String> = ['singLEFT', 'singDOWN', 'singUP', 'singRIGHT'];
-	
-	public var data:NoteSkinData;
-	
-	public function new(path:String)
-	{
-		var rawJson = null;
-		
-		try
-		{
-			rawJson = File.getContent(path).trim();
-			data = parseJSON(rawJson);
-		}
-		catch (e:Dynamic)
-		{
-			data = {};
-			trace(e);
-		}
-		resolveData(data);
-	}
 	
 	public static function resolveData(data:NoteSkinData)
 	{
-		data.globalSkin ??= defaultTexture;
+		data.globalSkin ??= DEFAULT_TEXTURE;
 		data.playerSkin ??= data.globalSkin;
 		data.opponentSkin ??= data.globalSkin;
 		data.extraSkin ??= data.globalSkin;
-		data.noteSplashSkin ??= defaultSplashTexture;
-		data.hasQuants ??= false;
-		data.isQuants ??= false;
+		data.noteSplashSkin ??= DEFAULT_SPLASH_TEXTURE;
 		
 		data.isPixel ??= false;
 		data.pixelSize ??= [4, 5];
 		data.antialiasing ??= true;
 		data.sustainSuffix ??= 'ENDS';
 		
-		data.noteAnimations ??= defaultNoteAnimations;
-		data.receptorAnimations ??= defaultReceptorAnimations;
-		data.noteSplashAnimations ??= defaultNoteSplashAnimations;
+		data.noteAnimations ??= DEFAULT_NOTE_ANIMATIONS;
+		data.receptorAnimations ??= DEFAULT_RECEPTOR_ANIMATIONS;
+		data.noteSplashAnimations ??= DEFAULT_NOTESPLASH_ANIMATIONS;
 		for (j in [data.noteAnimations, data.receptorAnimations])
 			for (i in j)
 				for (k in i)
-					if (k.looping == null) k.looping = false;
-
+					k.looping ??= false;
+					
 		data.singAnimations ??= defaultSingAnimations;
 		data.scale ??= 0.7;
 		data.splashesEnabled ??= true;
-	}
-	
-	public static function parseJSON(rawJson:String):NoteSkinData
-	{
-		var data:NoteSkinData = cast Json.parse(rawJson);
-		return data;
-	}
-	
-	public static var arrowSkins:Array<String> = [];
-	
-	public static function setNoteHelpers(helper:NoteSkinHelper, keys:Int = 4)
-	{
-		// trace('set helpers!');
 		
-		Note.handler = helper;
-		StrumNote.handler = helper;
-		NoteSplash.handler = helper;
-		
-		Note.keys = keys;
-		StrumNote.keys = keys;
-		NoteSplash.keys = keys;
+		data.inGameColoring ??= true;
 	}
-	// public static function getTempNoteAnim(handler:NoteSkinHelper)
-	// {
-	// 	var anim = fallbackNoteAnims.copy();
-	// 	var temp = 0;
-	// 	for (i in handler.data.noteAnimations)
-	// 		if (i[0].color.contains('temp')) temp += 1;
-	// 	trace(temp);
-	// 	for (i in 0...anim.length)
-	// 		anim[i].color = 'temp ' + temp;
-	// 	trace(anim);
-	// 	return anim;
-	// }
 }

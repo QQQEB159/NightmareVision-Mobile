@@ -2,19 +2,23 @@ package;
 
 import openfl.Lib;
 import openfl.display.Sprite;
-import openfl.events.Event;
 import openfl.display.StageScaleMode;
 
 import flixel.FlxG;
 import flixel.FlxGame;
-import flixel.FlxState;
+import flixel.input.keyboard.FlxKey;
 
 import funkin.backend.DebugDisplay;
 
+#if mobile
+import mobile.CopyState;
+#end
+
+@:nullSafety(Strict)
 class Main extends Sprite
 {
 	public static final PSYCH_VERSION:String = '0.5.2h';
-	public static final NMV_VERSION:String = '0.2';
+	public static final NMV_VERSION:String = '1.0';
 	public static final FUNKIN_VERSION:String = '0.2.7';
 	
 	public static final startMeta =
@@ -27,9 +31,6 @@ class Main extends Sprite
 			initialState: funkin.states.TitleState
 		};
 		
-	// You can pretty much ignore everything from here on - your code should go in your states.
-	public static var fpsVar:DebugDisplay;
-	
 	static function __init__()
 	{
 		funkin.utils.MacroUtil.haxeVersionEnforcement();
@@ -38,16 +39,31 @@ class Main extends Sprite
 	public static function main():Void
 	{
 		Lib.current.addChild(new Main());
+		#if cpp
+		cpp.NativeGc.enable(true);
+		#elseif hl
+		hl.Gc.enable(true);
+		#end
 	}
 	
 	public function new()
 	{
+		#if mobile
+		#if android
+		StorageUtil.requestPermissions();
+		#end
+		Sys.setCwd(StorageUtil.getStorageDirectory());
+		#end
+
+		CrashHandler.init();
+		
 		super();
 		
 		initHaxeUI();
 		
 		#if (windows && cpp)
-		funkin.api.NativeWindows.setDarkMode();
+		cpp.Windows.setDarkMode();
+		cpp.Windows.setDpiAware();
 		#end
 		
 		// load save data before creating FlxGame
@@ -55,11 +71,11 @@ class Main extends Sprite
 		FlxG.save.bind('funkin', CoolUtil.getSavePath());
 		
 		var game = new
-			#if CRASH_HANDLER
+			#if sys
 			FNFGame
 			#else
 			FlxGame
-			#end(startMeta.width, startMeta.height, Init, startMeta.fps, startMeta.fps, true, startMeta.startFullScreen);
+			#end(startMeta.width, startMeta.height, #if (mobile && MODS_ALLOWED) !CopyState.checkExistingFiles() ? CopyState : #end Init, startMeta.fps, startMeta.fps, true, startMeta.startFullScreen);
 			
 		// FlxG.game._customSoundTray wants just the class, it calls new from
 		// create() in there, which gets called when it's added to stage
@@ -72,20 +88,26 @@ class Main extends Sprite
 		
 		addChild(game);
 		
-		#if !mobile
-		fpsVar = new DebugDisplay(10, 3, 0xFFFFFF);
-		addChild(fpsVar);
+		// prevent accept button when alt+enter is pressed
+		FlxG.stage.addEventListener(openfl.events.KeyboardEvent.KEY_DOWN, (e) -> {
+			if (e.keyCode == FlxKey.ENTER && e.altKey) e.stopImmediatePropagation();
+		}, false, 100);
+		
+		DebugDisplay.init();
+		
 		Lib.current.stage.align = "tl";
 		Lib.current.stage.scaleMode = StageScaleMode.NO_SCALE;
-		if (fpsVar != null)
-		{
-			fpsVar.visible = ClientPrefs.showFPS;
-		}
-		#end
 		
 		#if html5
 		FlxG.autoPause = false;
 		FlxG.mouse.visible = false;
+		#end
+		
+		#if mobile
+		lime.system.System.allowScreenTimeout = ClientPrefs.screensaver;
+		#if android
+		FlxG.android.preventDefaultKeys = [BACK]; 
+		#end
 		#end
 		
 		FlxG.signals.gameResized.add(onResize);
@@ -99,11 +121,6 @@ class Main extends Sprite
 	static function onResize(w:Int, h:Int)
 	{
 		final scale:Float = Math.max(1, Math.min(w / FlxG.width, h / FlxG.height));
-		if (fpsVar != null)
-		{
-			// remove for now idfk some people have the textfield scaling fucky ???
-			// fpsVar.scaleX = fpsVar.scaleY = scale;
-		}
 		
 		if (FlxG.cameras != null)
 		{
@@ -119,8 +136,10 @@ class Main extends Sprite
 		}
 	}
 	
+	@:nullSafety(Off)
 	public static function resetSpriteCache(sprite:Sprite):Void
 	{
+		if (sprite == null) return;
 		@:privateAccess
 		{
 			sprite.__cacheBitmap = null;

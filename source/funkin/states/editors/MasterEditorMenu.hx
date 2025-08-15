@@ -1,12 +1,13 @@
 package funkin.states.editors;
 
+import funkin.objects.Character;
+
 import flixel.FlxG;
 import flixel.FlxSprite;
 import flixel.group.FlxGroup.FlxTypedGroup;
 import flixel.text.FlxText;
 import flixel.util.FlxColor;
 
-import funkin.objects.character.CharacterBuilder;
 import funkin.data.*;
 import funkin.objects.*;
 
@@ -19,7 +20,7 @@ class MasterEditorMenu extends MusicBeatState
 		'Dialogue Portrait Editor',
 		'Character Editor',
 		'Chart Editor',
-		'Note Skin Editor (unfinished)'
+		'Note Skin Editor'
 	];
 	private var grpTexts:FlxTypedGroup<Alphabet>;
 	private var directories:Array<String> = [null];
@@ -30,11 +31,12 @@ class MasterEditorMenu extends MusicBeatState
 	
 	override function create()
 	{
-		FlxG.camera.bgColor = FlxColor.BLACK;
 		#if DISCORD_ALLOWED
 		// Updating Discord Rich Presence
 		DiscordClient.changePresence("Editors Main Menu", null);
 		#end
+		
+		persistentUpdate = true;
 		
 		var bg:FlxSprite = new FlxSprite().loadGraphic(Paths.image('menuDesat'));
 		bg.scrollFactor.set();
@@ -108,19 +110,19 @@ class MasterEditorMenu extends MusicBeatState
 			switch (options[curSelected])
 			{
 				case 'Character Editor':
-					CoolUtil.loadAndSwitchState(() -> new CharacterEditorState(CharacterBuilder.DEFAULT_CHARACTER, false));
+					FlxG.switchState(() -> new CharacterEditorState(Character.DEFAULT_CHARACTER, false));
 				case 'Week Editor':
 					FlxG.switchState(() -> new WeekEditorState());
 				case 'Menu Character Editor':
 					FlxG.switchState(() -> new MenuCharacterEditorState());
 				case 'Dialogue Portrait Editor':
-					CoolUtil.loadAndSwitchState(DialogueCharacterEditorState.new, false);
+					FlxG.switchState(DialogueCharacterEditorState.new);
 				case 'Dialogue Editor':
-					CoolUtil.loadAndSwitchState(DialogueEditorState.new, false);
+					FlxG.switchState(DialogueEditorState.new);
 				case 'Chart Editor': // felt it would be cool maybe
-					CoolUtil.loadAndSwitchState(ChartingState.new, false);
-				case 'Note Skin Editor (unfinished)':
-					CoolUtil.loadAndSwitchState(() -> new NoteSkinEditor('default'), false);
+					FlxG.switchState(ChartEditorState.new);
+				case 'Note Skin Editor':
+					FlxG.switchState(() -> new NoteSkinEditor('default'));
 			}
 			FlxG.sound.music.volume = 0;
 			#if PRELOAD_ALL

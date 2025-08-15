@@ -1,4 +1,6 @@
 #if !macro
+//mobile
+import mobile.StorageUtil;
 // flixel
 import flixel.FlxG;
 import flixel.FlxSprite;
@@ -14,9 +16,9 @@ import flixel.math.FlxPoint;
 import flixel.sound.FlxSound;
 
 #if sys
-import sys.io.*;
-
 import sys.*;
+
+import sys.io.*;
 #end
 
 #if DISCORD_ALLOWED
@@ -31,7 +33,7 @@ import Init;
 
 import funkin.Paths;
 import funkin.data.ClientPrefs;
-import funkin.data.Conductor;
+import funkin.backend.Conductor;
 import funkin.utils.CoolUtil;
 import funkin.data.Highscore;
 import funkin.states.*;

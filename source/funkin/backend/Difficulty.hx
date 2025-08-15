@@ -3,6 +3,7 @@ package funkin.backend;
 import funkin.states.PlayState;
 
 // do more wuith this
+@:nullSafety
 class Difficulty
 {
 	/**
@@ -26,14 +27,20 @@ class Difficulty
 	public static var difficulties:Array<String> = reset();
 	
 	/**
-	 * Returns the difficulty suffix from `num`
-	 * @param num 
+	 * Returns the difficulty suffix from an index in `Difficulty.difficulties`
 	 */
-	public static function getDifficultyFilePath(?number:Int)
+	public static function getDifficultyFilePath(number:Int = -1):String
 	{
-		number ??= PlayState.storyDifficulty;
+		if (number == -1) number = PlayState.storyMeta.difficulty;
 		
-		var fileSuffix:String = difficulties[number];
+		var fileSuffix:Null<String> = difficulties[number];
+		
+		if (fileSuffix == null)
+		{
+			Logger.log('difficulty in index $number does not exist');
+			return Paths.formatToSongPath(defaultDifficulty);
+		}
+		
 		if (fileSuffix != defaultDifficulty)
 		{
 			fileSuffix = '-' + fileSuffix;
@@ -47,6 +54,8 @@ class Difficulty
 	
 	public static function getCurDifficulty():String
 	{
-		return difficulties[PlayState.storyDifficulty].toUpperCase();
+		var diff = difficulties[PlayState.storyMeta.difficulty] ?? defaultDifficulty;
+		
+		return diff.toUpperCase();
 	}
 }

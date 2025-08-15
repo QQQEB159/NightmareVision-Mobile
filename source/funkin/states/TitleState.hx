@@ -36,12 +36,8 @@ typedef TitleData =
 class TitleState extends MusicBeatState
 {
 	public static var initialized:Bool = false;
-
-	public static var instance:TitleState;
 	
-	public static var title = [
-		'FRIDAY', 'NIGHT', 'FUNKIN'
-	];
+	public var title:Array<String> = ['FRIDAY', 'NIGHT', 'FUNKIN'];
 	
 	public var blackScreen:FlxSprite;
 	public var credGroup:FlxGroup;
@@ -56,14 +52,12 @@ class TitleState extends MusicBeatState
 	
 	public var wackyImage:FlxSprite;
 	
-	public var titleJSON:TitleData;
+	public var titleJSON:Null<TitleData> = null;
 	
-	public static var updateVersion:String = '';
+	public var skippedIntro:Bool = false;
 	
 	override public function create():Void
 	{
-		instance = this;
-
 		FunkinAssets.cache.clearStoredMemory();
 		FunkinAssets.cache.clearUnusedMemory();
 		
@@ -78,21 +72,19 @@ class TitleState extends MusicBeatState
 		swagShader = new ColorSwap();
 		
 		setUpScript();
-		script.set('instance', instance);
 		
 		super.create();
 		
 		// IGNORE THIS!!!
-		titleJSON = Json.parse(Paths.getTextFromFile('images/gfDanceTitle.json'));
-		script.set('titleJSON', titleJSON);
+		
+		final path = Paths.getPath('images/gfDanceTitle.json', TEXT, null, true);
+		if (FunkinAssets.exists(path, TEXT))
+		{
+			titleJSON = FunkinAssets.parseJson(FunkinAssets.getContent(path));
+		}
 		
 		if (!initialized)
 		{
-			if (FlxG.save.data != null && FlxG.save.data.fullscreen)
-			{
-				FlxG.fullscreen = FlxG.save.data.fullscreen;
-				// trace('LOADED FULLSCREEN SETTING!!');
-			}
 			persistentUpdate = true;
 			persistentDraw = true;
 		}
@@ -101,7 +93,7 @@ class TitleState extends MusicBeatState
 		#if FREEPLAY
 		FlxG.switchState(FreeplayState.new);
 		#elseif CHARTING
-		FlxG.switchState(ChartingState.new);
+		FlxG.switchState(ChartEditorState.new);
 		#else
 		if (FlxG.save.data.flashing == null && !FlashingState.leftState)
 		{
@@ -138,14 +130,17 @@ class TitleState extends MusicBeatState
 			}
 		}
 		
-		Conductor.bpm = titleJSON.bpm;
+		Conductor.bpm = titleJSON?.bpm ?? 100;
 		persistentUpdate = true;
 		
-		if (isHardcodedState() && script.call('onStartIntro') != Globals.Function_Stop)
+		if (isHardcodedState() && scriptGroup.call('onStartIntro') != Globals.Function_Stop)
 		{
 			var bg:FlxSprite = new FlxSprite();
 			
-			if (titleJSON.backgroundSprite != null && titleJSON.backgroundSprite.length > 0 && titleJSON.backgroundSprite != "none")
+			if (titleJSON != null
+				&& titleJSON.backgroundSprite != null
+				&& titleJSON.backgroundSprite.length > 0
+				&& titleJSON.backgroundSprite != "none")
 			{
 				bg.loadGraphic(Paths.image(titleJSON.backgroundSprite));
 			}
@@ -156,7 +151,7 @@ class TitleState extends MusicBeatState
 			
 			add(bg);
 			
-			logoBl = new FlxSprite(titleJSON.titlex, titleJSON.titley);
+			logoBl = new FlxSprite(titleJSON?.titlex ?? 0.0, titleJSON?.titley ?? 0.0);
 			logoBl.frames = Paths.getSparrowAtlas('logoBumpin');
 			
 			logoBl.antialiasing = ClientPrefs.globalAntialiasing;
@@ -165,10 +160,7 @@ class TitleState extends MusicBeatState
 			logoBl.updateHitbox();
 			
 			swagShader = new ColorSwap();
-			gfDance = new FlxSprite(titleJSON.gfx, titleJSON.gfy);
-			
-			var easterEgg:String = FlxG.save.data.psychDevsEasterEgg;
-			if (easterEgg == null) easterEgg = ''; // html5 fix
+			gfDance = new FlxSprite(titleJSON?.gfx ?? 0.0, titleJSON?.gfy ?? 0.0);
 			
 			gfDance.frames = Paths.getSparrowAtlas('gfDanceTitle');
 			gfDance.animation.addByIndices('danceLeft', 'gfDance', [30, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14], "", 24, false);
@@ -181,7 +173,7 @@ class TitleState extends MusicBeatState
 			add(logoBl);
 			logoBl.shader = swagShader.shader;
 			
-			titleText = new FlxSprite(titleJSON.startx, titleJSON.starty).loadSparrowFrames('titleEnter');
+			titleText = new FlxSprite(titleJSON?.startx ?? 0.0, titleJSON?.starty ?? 0.0).loadSparrowFrames('titleEnter');
 			
 			var animFrames:Array<FlxFrame> = [];
 			@:privateAccess {
@@ -208,12 +200,10 @@ class TitleState extends MusicBeatState
 			titleText.animation.play('idle');
 			titleText.updateHitbox();
 			add(titleText);
-			
-			if (initialized) skipIntro();
-			else initialized = true;
 		}
 		
-		if(isHardcodedState() && script.call('createText') != Globals.Function_Stop){
+		if (isHardcodedState() && scriptGroup.call('createText') != Globals.Function_Stop)
+		{
 			credGroup = new FlxGroup();
 			add(credGroup);
 			textGroup = new FlxGroup();
@@ -237,7 +227,9 @@ class TitleState extends MusicBeatState
 			FlxTween.tween(credTextShit, {y: credTextShit.y + 20}, 2.9, {ease: FlxEase.quadInOut, type: PINGPONG});
 		}
 		
-		script.call('onCreatePost', []);
+		if (initialized) skipIntro();
+		else initialized = true;
+		scriptGroup.call('onCreatePost', []);
 	}
 	
 	public function getIntroTextShit():Array<Array<String>>
@@ -312,7 +304,7 @@ class TitleState extends MusicBeatState
 					titleText.alpha = FlxMath.lerp(titleTextAlphas[0], titleTextAlphas[1], timer);
 				}
 				
-				if (pressedEnter && script.call('onEnter', []) != Globals.Function_Stop)
+				if (pressedEnter && scriptGroup.call('onEnter', []) != Globals.Function_Stop)
 				{
 					titleText.color = FlxColor.WHITE;
 					titleText.alpha = 1;
@@ -398,10 +390,10 @@ class TitleState extends MusicBeatState
 		if (!closedState)
 		{
 			sickBeats++;
-			script.set('curBeat', sickBeats);
+			scriptGroup.set('curBeat', sickBeats);
 		}
 		
-		if (!isHardcodedState() || script.call('onBeatHit', []) == Globals.Function_Stop) return;
+		if (!isHardcodedState() || scriptGroup.call('onBeatHit', []) == Globals.Function_Stop) return;
 		
 		// just in case
 		if (isHardcodedState())
@@ -474,12 +466,9 @@ class TitleState extends MusicBeatState
 		}
 	}
 	
-	public var skippedIntro:Bool = false;
-	var increaseVolume:Bool = false;
-	
 	public function skipIntro():Void
 	{
-		if (script.call('onSkipIntro', []) != Globals.Function_Stop && !skippedIntro)
+		if (scriptGroup.call('onSkipIntro', []) != Globals.Function_Stop && !skippedIntro)
 		{
 			remove(ngSpr);
 			remove(credGroup);

@@ -13,6 +13,7 @@ import funkin.Mods;
  * 
  * There is no need to open this beyond the first time
  */
+@:nullSafety(Strict)
 class Init extends FlxState
 {
 	/**
@@ -44,11 +45,15 @@ class Init extends FlxState
 		
 		funkin.data.Highscore.load();
 		
-		funkin.scripts.FunkinIris.init();
+		mobile.MobileData.init();
+		
+		funkin.scripts.FunkinHScript.init();
 		
 		#if VIDEOS_ALLOWED
 		funkin.video.FunkinVideoSprite.init();
 		#end
+		
+		funkin.data.NoteSkinHelper.init();
 		
 		addPlugins();
 		
@@ -58,6 +63,7 @@ class Init extends FlxState
 		
 		funkin.data.WeekData.loadTheFirstEnabledMod();
 		
+		FlxG.fixedTimestep = false;
 		FlxG.game.focusLostFramerate = 60;
 		FlxG.sound.muteKeys = muteKeys;
 		FlxG.sound.volumeDownKeys = volumeDownKeys;
@@ -82,6 +88,9 @@ class Init extends FlxState
 			Application.current.onExit.add((ec) -> DiscordClient.shutdown());
 		}
 		#end
+		
+		funkin.scripting.PluginsManager.prepareSignals();
+		funkin.scripting.PluginsManager.populate();
 		
 		super.create();
 		

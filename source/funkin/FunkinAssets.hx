@@ -14,28 +14,44 @@ import openfl.Assets;
 /**
  * backend for retrieving and caching assets
  */
-@:nullSafety
+@:nullSafety(Strict)
 class FunkinAssets
 {
+	/**
+	 * Handles the caching of assets collected through `Paths` 
+	 */
 	public static final cache:FunkinCache = new FunkinCache();
 	
 	/**
-	 * Parses a txt file instance
+	 * Safer alternative to directly using `haxe.Json.parse`
+	 */
+	public static function parseJson(content:String, ?pos:haxe.PosInfos):Null<Any>
+	{
+		try
+		{
+			return haxe.Json.parse(content);
+		}
+		catch (e)
+		{
+			Logger.log('failed to parse content\nException: ${e.message}', WARN, false, pos);
+			return null;
+		}
+	}
+	
+	/**
+	 * Retrieves the content of a given file from its path
 	 */
 	public static function getContent(path:String):String
 	{
-		var content:String = '';
 		#if (MODS_ALLOWED || ASSET_REDIRECT)
-		if (FileSystem.exists(path)) content = File.getContent(path);
+		if (FileSystem.exists(path)) return File.getContent(path);
 		else
 		#end
-		if (Assets.exists(path)) content = Assets.getText(path);
+		if (Assets.exists(path)) return Assets.getText(path);
 		else
 		{
 			throw 'Couldnt find file at path [$path]';
 		}
-		
-		return content;
 	}
 	
 	/**
@@ -67,15 +83,18 @@ class FunkinAssets
 		
 		return exists;
 	}
-	 
+	
 	/**
 	 * Reads a given directory and returns all file names inside.
+	 * 
+	 * if it could not be found, an empty array will be returned.
 	 */
 	public static function readDirectory(directory:String):Array<String>
 	{
 		#if (MODS_ALLOWED || ASSET_REDIRECT)
-		return FileSystem.readDirectory(directory);
+		return FileSystem.exists(directory) ? FileSystem.readDirectory(directory) : []; // doing a check because i want this to maintain parity with ther assets variation
 		#else
+		if (directory.trim().length == 0) return [];
 		var dir = Assets.list().filter(string -> string.contains(directory));
 		return dir.map(string -> string.replace(directory, '').replace('/', ''));
 		#end
@@ -134,14 +153,12 @@ class FunkinAssets
 		}
 		else if (safety)
 		{
-			Logger.log('sound ($key) was not found. Returning beep instead', WARN);
+			Logger.log('sound ($key) was not found. Returning beep instead');
 			
 			return FlxAssets.getSoundAddExtension('flixel/sounds/beep');
 		}
 		else
 		{
-			Logger.log('sound ($key) was not found', WARN);
-			
 			return null;
 		}
 	}

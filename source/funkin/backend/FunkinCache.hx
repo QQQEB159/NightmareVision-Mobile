@@ -3,7 +3,6 @@ package funkin.backend;
 import openfl.Assets;
 
 import flixel.graphics.FlxGraphic;
-import flixel.system.FlxAssets;
 
 import openfl.display.BitmapData;
 import openfl.media.Sound;
@@ -22,7 +21,11 @@ class FunkinCache
 		@:privateAccess
 		for (key in FlxG.bitmap._cache.keys())
 		{
-			if (!currentTrackedGraphics.exists(key) && !key.startsWith('NMV_DEBUG'))
+			// ok this is dumb fix this later
+			if (!currentTrackedGraphics.exists(key)
+				&& !key.startsWith('pixels')
+				&& !key.contains('editors/notification_success.png')
+				&& !key.contains('editors/notification_warn.png')) // for haxeui is a bit hacky will do for now //find out hwo to avoid haxeui nicer or just do a different caching method
 			{
 				disposeGraphic(FlxG.bitmap.get(key));
 			}
@@ -58,7 +61,9 @@ class FunkinCache
 		
 		openfl.system.System.gc();
 		#if cpp
-		cpp.vm.Gc.compact();
+		cpp.NativeGc.run(true);
+		#elseif hl
+		hl.Gc.major();
 		#end
 	}
 	
@@ -99,21 +104,7 @@ class FunkinCache
 	{
 		if (allowGPU && ClientPrefs.gpuCaching)
 		{
-			if (bitmap.__texture == null)
-			{
-				bitmap.image.premultiplied = true;
-				bitmap.getTexture(FlxG.stage.context3D);
-			}
-			bitmap.getSurface();
 			bitmap.disposeImage();
-			
-			@:nullSafety(Off)
-			{
-				bitmap.image.data = null;
-				bitmap.image = null;
-			}
-			
-			bitmap.readable = true;
 		}
 		
 		var newGraphic:FlxGraphic = FlxGraphic.fromBitmapData(bitmap, false, key);

@@ -1,5 +1,7 @@
 package funkin.backend;
 
+import funkin.scripting.PluginsManager;
+
 import flixel.FlxG;
 import flixel.addons.transition.FlxTransitionableState;
 import flixel.util.FlxDestroyUtil;
@@ -35,42 +37,40 @@ class MusicBeatState extends FlxUIState
 	// script related vars
 	public var scripted:Bool = false;
 	public var scriptName:String = 'Placeholder';
-	public var script:HScriptGroup = new HScriptGroup();
+	public var scriptGroup:HScriptGroup = new HScriptGroup();
 	
-	inline function isHardcodedState() return (script != null && !script.call('customMenu') == true) || (script == null);
+	inline function isHardcodedState() return (scriptGroup != null && !scriptGroup.call('customMenu') == true) || (scriptGroup == null);
 	
-	public function setUpScript(?s:String, callOnCreate:Bool = true):Bool
+	public function setUpScript(?scriptName:String, callOnCreate:Bool = true):Bool
 	{
-		script.parent = this;
+		scriptGroup.parent = this;
 		
-		if (s == null)
+		if (scriptName == null)
 		{
-			final stateName = Type.getClassName(Type.getClass(this)).split('.');
-			s = stateName[stateName.length - 1];
+			final stateName = Type.getClassName(Type.getClass(this)).split('.').pop();
+			scriptName = stateName ?? '???';
 		}
 		
-		scriptName = s;
+		this.scriptName = scriptName;
 		
-		var scriptFile = FunkinIris.getPath('scripts/menus/$scriptName');
+		var scriptFile = FunkinHScript.getPath('scripts/menus/$scriptName');
 		
 		if (FunkinAssets.exists(scriptFile))
 		{
-			var tScript = FunkinIris.fromFile(scriptFile);
-			if (tScript.__garbage)
+			var newScript = FunkinHScript.fromFile(scriptFile, scriptName);
+			if (newScript.__garbage)
 			{
-				tScript = FlxDestroyUtil.destroy(tScript);
+				newScript = FlxDestroyUtil.destroy(newScript);
 				return false;
 			}
 			
-			script.addScript(tScript);
+			Logger.log('script [$scriptName] initialized');
+			
+			scriptGroup.addScript(newScript);
 			scripted = true;
 		}
-		else
-		{
-			Logger.log('$scriptName script [$scriptName] not found.');
-		}
 		
-		if (callOnCreate) script.call('onCreate', []);
+		if (callOnCreate) scriptGroup.call('onCreate', []);
 		
 		return scripted;
 	}
@@ -87,8 +87,16 @@ class MusicBeatState extends FlxUIState
 		}
 		
 		FlxTransitionableState.skipNextTransOut = false;
+		
+		PluginsManager.callOnScripts('onStateCreate');
 	}
 	
+	/**
+	 * Sorts a `FlxTypedGroup` based on objects `zIndex`.
+	 * 
+	 * used for stage layering primarily
+	 * @param group 
+	 */
 	public function refreshZ(?group:FlxTypedGroup<FlxBasic>)
 	{
 		group ??= FlxG.state;
@@ -114,8 +122,9 @@ class MusicBeatState extends FlxUIState
 			}
 		}
 		
-		script.call('onUpdate', [elapsed]);
-		
+		final hscriptArgs = [elapsed];
+		scriptGroup.call('onUpdate', hscriptArgs);
+		PluginsManager.callOnScripts('onUpdate', hscriptArgs);
 		super.update(elapsed);
 	}
 	
@@ -175,21 +184,25 @@ class MusicBeatState extends FlxUIState
 	public function stepHit():Void
 	{
 		if (curStep % 4 == 0) beatHit();
-		script.call('onStepHit', [curStep]);
+		scriptGroup.call('onStepHit', []);
+		PluginsManager.callOnScripts('onStepHit');
 	}
 	
 	public function beatHit():Void
 	{
-		script.call('onBeatHit', [curBeat]);
+		scriptGroup.call('onBeatHit', []);
+		PluginsManager.callOnScripts('onBeatHit');
 	}
 	
-	public function sectionHit():Void {}
-	
-	function getBeatsOnSection()
+	public function sectionHit():Void
 	{
-		var val:Null<Float> = 4;
-		if (PlayState.SONG != null && PlayState.SONG.notes[curSection] != null) val = PlayState.SONG.notes[curSection].sectionBeats;
-		return val == null ? 4 : val;
+		scriptGroup.call('onSectionHit', []);
+		PluginsManager.callOnScripts('onSectionHit');
+	}
+	
+	function getBeatsOnSection():Float
+	{
+		return PlayState.SONG?.notes[curSection]?.sectionBeats ?? 4.0;
 	}
 	
 	@:access(funkin.states.FreeplayState)
@@ -197,7 +210,7 @@ class MusicBeatState extends FlxUIState
 	{
 		FlxG.sound?.music?.fadeTween?.cancel();
 		FreeplayState.vocals?.fadeTween?.cancel();
-		
+		@:nullSafety(Off)
 		if (FlxG.sound != null && FlxG.sound.music != null) FlxG.sound.music.onComplete = null;
 		
 		if (!FlxTransitionableState.skipNextTransIn)
@@ -213,9 +226,9 @@ class MusicBeatState extends FlxUIState
 	
 	override function destroy()
 	{
-		script.call('onDestroy');
+		scriptGroup.call('onDestroy');
 		
-		script = FlxDestroyUtil.destroy(script);
+		scriptGroup = FlxDestroyUtil.destroy(scriptGroup);
 		
 		super.destroy();
 	}

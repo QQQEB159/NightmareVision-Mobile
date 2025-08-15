@@ -1,5 +1,7 @@
 package funkin.states.options;
 
+import funkin.backend.DebugDisplay;
+
 import flixel.FlxG;
 
 class VisualsUISubState extends BaseOptionsMenu
@@ -39,11 +41,9 @@ class VisualsUISubState extends BaseOptionsMenu
 		option.decimals = 1;
 		addOption(option);
 		
-		#if !mobile
 		var option:Option = new Option('FPS Counter', 'If unchecked, hides FPS Counter.', 'showFPS', 'bool', true);
 		addOption(option);
 		option.onChange = onChangeFPSCounter;
-		#end
 		
 		var option:Option = new Option('Pause Screen Song:', "What song do you prefer for the Pause Screen?", 'pauseMusic', 'string', 'Tea Time', ['None', 'Breakfast', 'Tea Time']);
 		addOption(option);
@@ -74,10 +74,8 @@ class VisualsUISubState extends BaseOptionsMenu
 		super.destroy();
 	}
 	
-	#if !mobile
 	function onChangeFPSCounter()
 	{
-		if (Main.fpsVar != null) Main.fpsVar.visible = ClientPrefs.showFPS;
+		if (DebugDisplay.instance != null) DebugDisplay.instance.visible = ClientPrefs.showFPS;
 	}
-	#end
 }

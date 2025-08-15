@@ -9,7 +9,7 @@
 			"fps": 24,
 			"anim": "idle",
 			"indices": [],
-			"name": "BF IDLE"
+			"name": "BF IDLE instance 1"
 		},
 		{
 			"loop": false,
@@ -19,7 +19,7 @@
 			],
 			"anim": "singLEFTmiss",
 			"fps": 24,
-			"name": "BF LEFT MISS",
+			"name": "BF LEFT MISS instance 1",
 			"indices": []
 		},
 		{
@@ -30,7 +30,7 @@
 			],
 			"anim": "singLEFT",
 			"fps": 24,
-			"name": "BF LEFT NOTE",
+			"name": "BF LEFT NOTE instance 1",
 			"indices": []
 		},
 		{
@@ -41,7 +41,7 @@
 			],
 			"anim": "singUPmiss",
 			"fps": 24,
-			"name": "BF UP MISS",
+			"name": "BF UP MISS instance 1",
 			"indices": []
 		},
 		{
@@ -52,7 +52,7 @@
 			],
 			"anim": "singUP",
 			"fps": 24,
-			"name": "BF UP NOTE",
+			"name": "BF UP NOTE instance 1",
 			"indices": []
 		},
 		{
@@ -63,7 +63,7 @@
 			],
 			"anim": "singRIGHT",
 			"fps": 24,
-			"name": "BF RIGHT NOTE",
+			"name": "BF RIGHT NOTE instance 1",
 			"indices": []
 		},
 		{
@@ -74,7 +74,7 @@
 			],
 			"anim": "singRIGHTmiss",
 			"fps": 24,
-			"name": "BF RIGHT MISS",
+			"name": "BF RIGHT MISS instance 1",
 			"indices": []
 		},
 		{
@@ -85,7 +85,7 @@
 			],
 			"anim": "singDOWN",
 			"fps": 24,
-			"name": "BF DOWN NOTE",
+			"name": "BF DOWN NOTE instance 1",
 			"indices": []
 		},
 		{
@@ -96,7 +96,7 @@
 			],
 			"anim": "singDOWNmiss",
 			"fps": 24,
-			"name": "BF DOWN MISS",
+			"name": "BF DOWN MISS instance 1",
 			"indices": []
 		}
 	],
@@ -106,17 +106,20 @@
 		0,
 		350
 	],
+	"dance_every": 2,
+	"gameover_intial_sound": null,
+	"scalableOffsets": false,
+	"gameover_confirm_sound": null,
 	"healthicon": "bf-pixel",
+	"gameover_character": null,
 	"flip_x": true,
-	"healthbar_colors": [
-		123,
-		214,
-		246
-	],
+	"healthbar_colour": -8661258,
 	"camera_position": [
-		50,
+		230,
 		-60
 	],
+	"gameover_loop_sound": null,
 	"sing_duration": 4,
-	"scale": 6
+	"scale": 6,
+	"_editor_isPlayer": true
 }

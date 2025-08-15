@@ -8,7 +8,7 @@ import flixel.FlxG;
 
 import funkin.game.modchart.*;
 import funkin.states.*;
-import funkin.objects.*;
+import funkin.objects.note.*;
 import funkin.game.modchart.Modifier.ModifierOrder;
 
 class ReverseModifier extends NoteModifier
@@ -111,9 +111,9 @@ class ReverseModifier extends NoteModifier
 	override function getPos(time:Float, visualDiff:Float, timeDiff:Float, beat:Float, pos:Vector3, data:Int, player:Int, obj:FlxSprite)
 	{
 		var perc = getReverseValue(data, player);
-		var shift = CoolUtil.scale(perc, 0, 1, 50, FlxG.height - 150);
-		var mult = CoolUtil.scale(perc, 0, 1, 1, -1);
-		shift = CoolUtil.scale(getSubmodValue("centered", player), 0, 1, shift, (FlxG.height / 2) - 56);
+		var shift = MathUtil.scale(perc, 0, 1, 50, FlxG.height - 150);
+		var mult = MathUtil.scale(perc, 0, 1, 1, -1);
+		shift = MathUtil.scale(getSubmodValue("centered", player), 0, 1, shift, (FlxG.height / 2) - 56);
 		
 		pos.y = shift + (visualDiff * mult);
 		
@@ -127,14 +127,12 @@ class ReverseModifier extends NoteModifier
 				var daY = pos.y;
 				var fakeCrochet:Float = (60 / PlayState.SONG.bpm) * 1000;
 				var songSpeed:Float = PlayState.instance.songSpeed * note.multSpeed;
-				if (note.animation.curAnim.name.endsWith('end${note.noteData}'))
+				if (note.isSustainEnd)
 				{
 					daY += 10.5 * (fakeCrochet * 0.0025) * 1.5 * songSpeed + (46 * (songSpeed - 1));
 					daY -= 46 * (1 - (fakeCrochet / 600)) * songSpeed;
-					/*if (PlayState.isPixelStage)
-							daY += 8;
-						else */
-					daY -= 19;
+					if (PlayState.isPixelStage) daY += 8;
+					else daY -= 19;
 				}
 				daY += (Note.swagWidth * 0.5) - (60.5 * (songSpeed - 1));
 				daY += 27.5 * ((PlayState.SONG.bpm * 0.01) - 1) * (songSpeed - 1);

@@ -11,9 +11,10 @@ import funkin.game.modchart.modifiers.*;
 import funkin.game.modchart.events.*;
 import funkin.states.*;
 import funkin.objects.*;
+import funkin.objects.note.*;
 
 // Weird amalgamation of Schmovin' modifier system, Andromeda modifier system and my own new shit -neb
-// todo more safety this crashes too easily
+// todo more safety this crashes too easily //still to do aha..
 class ModManager
 {
 	/**
@@ -40,7 +41,7 @@ class ModManager
 			BeatModifier,
 			AlphaModifier,
 			ReceptorScrollModifier,
-			ScaleModifier, // u cause sustains to break.
+			ScaleModifier,
 			TransformModifier,
 			InfinitePathModifier,
 			AccelModifier,
@@ -69,9 +70,6 @@ class ModManager
 	public var notemodRegister:Map<String, Modifier> = [];
 	public var miscmodRegister:Map<String, Modifier> = [];
 	
-	@:deprecated("Unused in place of notemodRegister and miscModRegister")
-	public var registerByType:Map<ModifierType, Map<String, Modifier>> = [NOTE_MOD => [], MISC_MOD => []];
-	
 	public var register:Map<String, Modifier> = [];
 	
 	public var modArray:Array<Modifier> = [];
@@ -83,7 +81,6 @@ class ModManager
 	public function registerMod(modName:String, mod:Modifier, ?registerSubmods = true)
 	{
 		register.set(modName, mod);
-		// registerByType.get(mod.getModType()).set(modName, mod);
 		switch (mod.getModType())
 		{
 			case NOTE_MOD:
@@ -229,8 +226,7 @@ class ModManager
 		for (name in activeMods[player])
 		{
 			var mod:Modifier = notemodRegister.get(name);
-			if (mod == null) continue;
-			if (!obj.active) continue;
+			if (mod == null || !obj.active) continue;
 			if ((obj is Note))
 			{
 				var o:Note = cast obj;
@@ -248,14 +244,15 @@ class ModManager
 		obj.centerOrigin();
 		obj.centerOffsets();
 		
-		if (obj is StrumNote)
+		if (obj is StrumNote && obj.animation.curAnim != null)
 		{
 			var strum:StrumNote = cast obj;
-			var strumAnim = strum.animation.curAnim.name;
-			if (strum.animOffsets.exists(strumAnim))
+			final strumAnim = strum.animation.curAnim.name;
+			final offsetsAdd = strum.animOffsets.get(strumAnim);
+			if (offsetsAdd != null)
 			{
-				strum.offset.x += strum.animOffsets.get(strumAnim)[0];
-				strum.offset.y += strum.animOffsets.get(strumAnim)[1];
+				strum.offset.x += offsetsAdd[0];
+				strum.offset.y += offsetsAdd[1];
 			}
 		}
 		
@@ -274,7 +271,7 @@ class ModManager
 	
 	public inline function getVisPos(songPos:Float = 0, strumTime:Float = 0, songSpeed:Float = 1)
 	{
-		return -getBaseVisPosD(songPos - strumTime, 1);
+		return -getBaseVisPosD(songPos - strumTime, songSpeed);
 	}
 	
 	public function getPos(time:Float, diff:Float, tDiff:Float, beat:Float, data:Int, player:Int, obj:FlxSprite, ?exclusions:Array<String>, ?pos:Vector3):Vector3

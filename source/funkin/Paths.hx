@@ -1,5 +1,6 @@
 package funkin;
 
+import haxe.io.Path;
 import haxe.Json;
 
 import openfl.system.System;
@@ -13,6 +14,10 @@ import flixel.graphics.frames.FlxAtlasFrames;
 import flixel.graphics.FlxGraphic;
 
 // @:nullSafety
+
+/**
+ * Primary class used to simplify retrieving and finding assets.
+ */
 class Paths
 {
 	#if ASSET_REDIRECT
@@ -32,15 +37,12 @@ class Paths
 	public static inline final SOUND_EXT = "ogg";
 	public static inline final VIDEO_EXT = "mp4";
 	
-	public static var currentLevel:Null<String> = null;
-	
-	static public function setCurrentLevel(?name:String):Void
-	{
-		currentLevel = name?.toLowerCase() ?? null;
-	}
-	
+	// thinking of removing parentfolder its pointless ?
 	public static function getPath(file:String, ?type:AssetType = TEXT, ?parentFolder:String, checkMods:Bool = false):String
 	{
+		if (library == "mobile")
+			return getPrimaryPath('mobile/$file');
+		
 		#if MODS_ALLOWED
 		if (checkMods)
 		{
@@ -52,16 +54,12 @@ class Paths
 		
 		if (parentFolder != null) return getLibraryPath(file, parentFolder);
 		
-		if (currentLevel != null)
-		{
-			var levelPath:String = getLibraryPathForce(file, currentLevel);
-			
-			if (FunkinAssets.exists(levelPath, type)) return levelPath;
-		}
-		
 		#if ASSET_REDIRECT
-		final embedCheck = getPrimaryPath().replace(CORE_DIRECTORY, 'assets') + file;
-		if (Assets.exists(embedCheck)) return embedCheck;
+		final embedCheck = getPrimaryPath().replace(CORE_DIRECTORY, trail + 'assets/embeds') + file;
+		if (FunkinAssets.exists(embedCheck))
+		{
+			return embedCheck;
+		}
 		#end
 		
 		return getPrimaryPath(file);
@@ -112,20 +110,10 @@ class Paths
 		return getPath('shaders/$key.vert', TEXT, null, true);
 	}
 	
-	public static inline function modsNoteskin(key:String)
-	{
-		return modFolders('noteskins/$key.json');
-	}
-	
-	public static inline function lua(key:String, ?library:String):String
-	{
-		return getPath('$key.lua', TEXT, library);
-	}
-	
 	static public function video(key:String):String
 	{
 		#if MODS_ALLOWED
-		var file:String = modsVideo(key);
+		final file:String = modsVideo(key);
 		if (FileSystem.exists(file))
 		{
 			return file;
@@ -141,7 +129,7 @@ class Paths
 	
 	static public function sound(key:String, ?library:String):Null<openfl.media.Sound>
 	{
-		final key = Paths.getPath('sounds/$key.$SOUND_EXT', SOUND, library, true);
+		final key = getPath('sounds/$key.$SOUND_EXT', SOUND, library, true);
 		
 		return FunkinAssets.getSound(key);
 	}
@@ -153,7 +141,7 @@ class Paths
 	
 	public static inline function music(key:String, ?library:String):Null<openfl.media.Sound>
 	{
-		final path = Paths.getPath('music/$key.$SOUND_EXT', SOUND, library, true);
+		final path = getPath('music/$key.$SOUND_EXT', SOUND, library, true);
 		
 		return FunkinAssets.getSound(path);
 	}
@@ -163,7 +151,7 @@ class Paths
 		var songKey:String = '${formatToSongPath(song)}/Voices';
 		if (postFix != null) songKey += '-$postFix';
 		
-		songKey = Paths.getPath('songs/$songKey.$SOUND_EXT', SOUND, null, true);
+		songKey = getPath('songs/$songKey.$SOUND_EXT', SOUND, null, true);
 		
 		return FunkinAssets.getSound(songKey, true, safety);
 	}
@@ -172,41 +160,44 @@ class Paths
 	{
 		var songKey:String = '${formatToSongPath(song)}/Inst';
 		
-		songKey = Paths.getPath('songs/$songKey.$SOUND_EXT', SOUND, null, true);
+		songKey = getPath('songs/$songKey.$SOUND_EXT', SOUND, null, true);
 		
 		return FunkinAssets.getSound(songKey);
 	}
 	
-	public static inline function image(key:String, ?library:String, allowGPU:Bool = true):Null<FlxGraphic>
+	public static inline function image(key:String, ?library:String, allowGPU:Bool = true):FlxGraphic
 	{
-		final key = Paths.getPath('images/$key.png', IMAGE, library, true);
+		final key = getPath('images/$key.png', IMAGE, library, true);
 		
-		return FunkinAssets.getGraphic(key, true, allowGPU);
+		final cacheGraphic = FunkinAssets.getGraphic(key, true, allowGPU);
+		
+		if (cacheGraphic == null)
+		{
+			return FlxG.bitmap.add('flixel/images/logo/default.png'); // to be compliant with nullsafety
+		}
+		else
+		{
+			return cacheGraphic;
+		}
+	}
+	
+	// uise this more
+	public static function findFileAndAddExts(file:String, exts:Array<String>):String
+	{
+		for (ext in exts)
+		{
+			final joined = getPath('$file.$ext', TEXT, null, true);
+			if (FunkinAssets.exists(joined)) return joined;
+		}
+		
+		return getPath('$file.${exts[0]}', TEXT, null, true);
 	}
 	
 	static public function getTextFromFile(key:String, ignoreMods:Bool = false):String
 	{
-		#if sys
-		#if MODS_ALLOWED
-		if (!ignoreMods && FileSystem.exists(modFolders(key))) return File.getContent(modFolders(key));
-		#end
+		final path = Paths.getPath(key, TEXT, null, !ignoreMods);
 		
-		if (FileSystem.exists(getPrimaryPath(key))) return File.getContent(getPrimaryPath(key));
-		
-		if (currentLevel != null)
-		{
-			var levelPath:String = '';
-			if (currentLevel != 'shared')
-			{
-				levelPath = getLibraryPathForce(key, currentLevel);
-				if (FileSystem.exists(levelPath)) return File.getContent(levelPath);
-			}
-			
-			levelPath = getLibraryPathForce(key, 'shared');
-			if (FileSystem.exists(levelPath)) return File.getContent(levelPath);
-		}
-		#end
-		return Assets.getText(getPath(key, TEXT));
+		return FunkinAssets.getContent(path);
 	}
 	
 	public static inline function font(key:String):String
@@ -230,30 +221,52 @@ class Paths
 		}
 		#end
 		
-		if (FunkinAssets.exists(getPath(key, type)))
-		{
-			return true;
-		}
-		return false;
+		return FunkinAssets.exists(getPath(key, type));
 	}
 	
-	public static inline function getMultiAtlas(keys:Array<String>, ?library:String, ?allowGPU:Bool = true):FlxAtlasFrames
+	public static inline function getMultiAtlas(keys:Array<String>, ?library:String, ?allowGPU:Bool = true):FlxAtlasFrames // from psych
 	{
 		// todo add wat for this to work with fucking uhhhhh packeratlas
-		var frames = Paths.getSparrowAtlas(keys.shift().trim(), library, allowGPU);
+		var frames = getAtlasFrames(keys.shift().trim(), library, allowGPU);
 		
 		if (keys.length != 0)
 		{
+			// odd
+			final originalCollection = frames;
+			frames = new FlxAtlasFrames(originalCollection.parent);
+			frames.addAtlas(originalCollection, true);
 			for (i in keys)
 			{
-				final newFrames = getSparrowAtlas(i.trim(), library, allowGPU);
+				final newFrames = getAtlasFrames(i.trim(), library, allowGPU);
 				if (newFrames != null)
 				{
-					frames.addAtlas(newFrames, true);
+					frames.addAtlas(newFrames, false); // ? okay
 				}
 			}
 		}
 		return frames;
+	}
+	
+	/**
+	 * Retrieves atlas frames of either `sparrow` or `packer` 
+	 * @param key 
+	 * @param library 
+	 * @param allowGPU 
+	 */
+	public static inline function getAtlasFrames(key:String, ?library:String, allowGPU:Bool = true):FlxAtlasFrames
+	{
+		final xmlPath = getPath('images/$key.xml', TEXT, library, true);
+		final txtPath = getPath('images/$key.txt', TEXT, library, true);
+		
+		final graphic = image(key, library, allowGPU);
+		
+		// packer
+		if (FunkinAssets.exists(txtPath))
+		{
+			return FlxAtlasFrames.fromSpriteSheetPacker(graphic, FunkinAssets.getContent(txtPath));
+		}
+		
+		return FlxAtlasFrames.fromSparrow(graphic, FunkinAssets.getContent(xmlPath));
 	}
 	
 	public static inline function getSparrowAtlas(key:String, ?library:String, ?allowGPU:Bool = true):FlxAtlasFrames
@@ -266,19 +279,7 @@ class Paths
 	
 	public static inline function getPackerAtlas(key:String, ?library:String, ?allowGPU:Bool = true)
 	{
-		#if MODS_ALLOWED
-		var imageLoaded:FlxGraphic = image(key, library, allowGPU);
-		var txtExists:Bool = false;
-		if (FileSystem.exists(modsTxt(key)))
-		{
-			txtExists = true;
-		}
-		
-		return FlxAtlasFrames.fromSpriteSheetPacker((imageLoaded != null ? imageLoaded : image(key, library, allowGPU)),
-			(txtExists ? File.getContent(modsTxt(key)) : getPath('images/$key.txt', TEXT, library)));
-		#else
-		return FlxAtlasFrames.fromSpriteSheetPacker(image(key, library, allowGPU), getPath('images/$key.txt', TEXT, library));
-		#end
+		return FlxAtlasFrames.fromSpriteSheetPacker(image(key, library, allowGPU), FunkinAssets.getContent(getPath('images/$key.txt', TEXT, library, true)));
 	}
 	
 	public static inline function formatToSongPath(path:String):String
@@ -286,10 +287,57 @@ class Paths
 		return path.toLowerCase().replace(' ', '-');
 	}
 	
+	/**
+	 * Lists all files found within a given directory
+	 * 
+	 * if `checkMods`, they will be loaded in order of
+	 * 
+	 * `content/globalMods/`, `content/`, `content/currentMod/`.
+	 */
+	public static function listAllFilesInDirectory(directory:String, checkMods:Bool = true) // based of psychs Mods.directoriesWithFile
+	{
+		// todo maybe make this recursive ?
+		var folders:Array<String> = [];
+		var files:Array<String> = [];
+		
+		if (FunkinAssets.exists(getPrimaryPath(directory))) folders.push(getPrimaryPath(directory));
+		
+		#if MODS_ALLOWED
+		if (checkMods)
+		{
+			for (mod in Mods.globalMods)
+			{
+				final folder = mods('$mod/$directory');
+				if (FileSystem.exists(folder) && !folders.contains(folder)) folders.push(folder);
+			}
+			
+			final folder = mods(directory);
+			if (FileSystem.exists(folder) && !folders.contains(folder)) folders.push(folder);
+			
+			if (Mods.currentModDirectory?.length > 0)
+			{
+				final folder = mods('${Mods.currentModDirectory}/$directory');
+				if (FileSystem.exists(folder) && !folders.contains(folder)) folders.push(folder);
+			}
+		}
+		#end
+		
+		for (folder in folders)
+		{
+			for (file in FunkinAssets.readDirectory(folder))
+			{
+				final path = Path.join([folder, file]);
+				if (!files.contains(path)) files.push(path);
+			}
+		}
+		
+		return files;
+	}
+	
 	#if MODS_ALLOWED
 	public static inline function mods(key:String = ''):String
 	{
-		return '$MODS_DIRECTORY/' + key;
+		return #if mobile Sys.getCwd() + #end '$MODS_DIRECTORY/' + key;
 	}
 	
 	public static inline function modsFont(key:String):String
@@ -327,11 +375,16 @@ class Paths
 		return modFolders('images/' + key + '.txt');
 	}
 	
+	public static inline function modsNoteskin(key:String)
+	{
+		return modFolders('noteskins/$key.json');
+	}
+	
 	static public function modFolders(key:String):String
 	{
 		if (Mods.currentModDirectory != null && Mods.currentModDirectory.length > 0)
 		{
-			var fileToCheck:String = mods(Mods.currentModDirectory + '/' + key);
+			final fileToCheck:String = mods(Mods.currentModDirectory + '/' + key);
 			if (FileSystem.exists(fileToCheck))
 			{
 				return fileToCheck;
@@ -340,10 +393,10 @@ class Paths
 		
 		for (mod in Mods.globalMods)
 		{
-			var fileToCheck:String = mods(mod + '/' + key);
+			final fileToCheck:String = mods(mod + '/' + key);
 			if (FileSystem.exists(fileToCheck)) return fileToCheck;
 		}
-		return '$MODS_DIRECTORY/' + key;
+		return #if mobile Sys.getCwd() + #end '$MODS_DIRECTORY/$key';
 	}
 	#end
 }

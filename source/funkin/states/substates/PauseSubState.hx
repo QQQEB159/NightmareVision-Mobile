@@ -162,6 +162,8 @@ class PauseSubState extends MusicBeatSubstate
 		}
 		
 		super.create();
+
+		scriptGroup.call('onCreatePost', []);
 	}
 	
 	var holdTime:Float = 0;
@@ -222,10 +224,8 @@ class PauseSubState extends MusicBeatSubstate
 				{
 					if (menuItems.length - 1 != curSelected && difficultyChoices.contains(daSelected))
 					{
-						var name:String = PlayState.SONG.song;
-						var poop = Highscore.formatSong(name, curSelected);
-						PlayState.SONG = Song.loadFromJson(poop, name);
-						PlayState.storyDifficulty = curSelected;
+						PlayState.SONG = Chart.fromSong(PlayState.SONG.song, curSelected);
+						PlayState.storyMeta.difficulty = curSelected;
 						FlxG.resetState();
 						FlxG.sound.music.volume = 0;
 						PlayState.changedDifficulty = true;
@@ -249,7 +249,7 @@ class PauseSubState extends MusicBeatSubstate
 				switch (daSelected)
 				{
 					case 'Options':
-						PlayState.instance.paused = true; // For lua
+						PlayState.instance.paused = true;
 						PlayState.instance.vocals.volume = 0;
 						FlxG.switchState(() -> new OptionsState());
 						@:privateAccess
@@ -299,7 +299,6 @@ class PauseSubState extends MusicBeatSubstate
 						PlayState.changedDifficulty = true;
 						PlayState.instance.botplayTxt.visible = PlayState.instance.cpuControlled;
 						PlayState.instance.botplayTxt.alpha = 1;
-						PlayState.instance.botplaySine = 0;
 					case 'Hawk Tuah Respect Button -->':
 						FlxG.sound.play(Paths.sound('untitled1'));
 					case "Exit to menu":
@@ -319,7 +318,7 @@ class PauseSubState extends MusicBeatSubstate
 	{
 		if (scriptGroup.call('onRestart', []) != Globals.Function_Stop)
 		{
-			PlayState.instance.paused = true; // For lua
+			PlayState.instance.paused = true;
 			FlxG.sound.music.volume = 0;
 			PlayState.instance.vocals.volume = 0;
 			

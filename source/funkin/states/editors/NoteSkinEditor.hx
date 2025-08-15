@@ -7,8 +7,6 @@ import openfl.events.Event;
 import openfl.net.FileReference;
 import openfl.events.IOErrorEvent;
 
-import extensions.FlxUIDropDownMenuEx;
-
 import flixel.FlxObject;
 import flixel.FlxCamera;
 import flixel.text.FlxText;
@@ -23,6 +21,7 @@ import flixel.addons.ui.FlxUITabMenu;
 
 import funkin.data.*;
 import funkin.objects.*;
+import funkin.objects.note.*;
 import funkin.states.substates.Prompt;
 
 enum MODE
@@ -74,7 +73,7 @@ class NoteSkinEditor extends MusicBeatState
 	public var script_SUSTAINOffsets:Vector<FlxPoint>;
 	public var script_SUSTAINENDOffsets:Vector<FlxPoint>;
 	public var script_SPLASHOffsets:Vector<FlxPoint>;
-
+	
 	public var fuck:Array<Vector<FlxPoint>> = [];
 	
 	public var playFields:FlxTypedGroup<PlayField>;
@@ -94,12 +93,14 @@ class NoteSkinEditor extends MusicBeatState
 		setupHelper(path, oh);
 	}
 	
-	function helperLoading(n)
+	function helperLoading(file:String)
 	{
-		var noteskin:NoteSkinHelper = null;
+		var noteskin:Null<NoteSkinHelper> = null;
 		
-		if (FileSystem.exists(Paths.modsNoteskin(n))) noteskin = new NoteSkinHelper(Paths.modsNoteskin(n));
-		else if (FileSystem.exists(Paths.noteskin(n))) noteskin = new NoteSkinHelper(Paths.noteskin(n));
+		if (FunkinAssets.exists(Paths.noteskin(file)))
+		{
+			noteskin = new NoteSkinHelper(Paths.noteskin(file));
+		}
 		
 		noteskin ??= new NoteSkinHelper(Paths.noteskin('default'));
 		
@@ -111,7 +112,8 @@ class NoteSkinEditor extends MusicBeatState
 		if (oh != null) handler = oh;
 		else handler = helperLoading(n);
 		
-		NoteSkinHelper.setNoteHelpers(handler, handler.data.noteAnimations.length);
+		NoteSkinHelper.keys = handler.data.noteAnimations.length;
+		NoteSkinHelper.instance = handler;
 		
 		name = n;
 		keys = handler.data.noteAnimations.length;
@@ -138,7 +140,7 @@ class NoteSkinEditor extends MusicBeatState
 		script_SUSTAINENDOffsets = new Vector<FlxPoint>(keys);
 		script_STRUMOffsets = new Vector<FlxPoint>(keys);
 		script_SPLASHOffsets = new Vector<FlxPoint>(keys);
-
+		
 		for (i in 0...keys)
 		{
 			script_NOTEOffsets[i] = new FlxPoint();
@@ -318,8 +320,7 @@ class NoteSkinEditor extends MusicBeatState
 						}
 						else
 						{
-							if (note != curSelectedNote)
-							note.alpha = 0.6;
+							if (note != curSelectedNote) note.alpha = 0.6;
 						}
 					}
 				}
@@ -340,7 +341,7 @@ class NoteSkinEditor extends MusicBeatState
 						
 						if (FlxG.keys.pressed.J) camFollow.x -= addToCam;
 						else if (FlxG.keys.pressed.L) camFollow.x += addToCam;
-
+						
 						FlxG.watch.addQuick('camFollow', camFollow);
 					}
 					
@@ -377,7 +378,7 @@ class NoteSkinEditor extends MusicBeatState
 						
 						if (FlxG.keys.justPressed.ESCAPE)
 						{
-							CoolUtil.loadAndSwitchState(MasterEditorMenu.new);
+							FlxG.switchState(MasterEditorMenu.new);
 						}
 						
 						for (i in 0...controlArray.length)
@@ -459,7 +460,7 @@ class NoteSkinEditor extends MusicBeatState
 					{
 						if (FlxG.keys.justPressed.ESCAPE)
 						{
-							CoolUtil.loadAndSwitchState(MasterEditorMenu.new);
+							FlxG.switchState(MasterEditorMenu.new);
 						}
 						
 						for (i in 0...controlArray.length)
@@ -479,7 +480,7 @@ class NoteSkinEditor extends MusicBeatState
 								handler.data.noteAnimations[curSelectedNote.noteData][curSelectedNote.ID].offsets[arrayVal] += negaMult * multiplier;
 								if (arrayVal == 0) fuck[curSelectedNote.ID][curSelectedNote.noteData].x += negaMult * multiplier;
 								else fuck[curSelectedNote.ID][curSelectedNote.noteData].y += negaMult * multiplier;
-
+								
 								if (arrayVal == 1) notes[curSelectedNote.noteData][curSelectedNote.ID].y += negaMult * multiplier;
 								else notes[curSelectedNote.noteData][curSelectedNote.ID].x += negaMult * multiplier;
 								
@@ -543,7 +544,6 @@ class NoteSkinEditor extends MusicBeatState
 	{
 		curSelectedNote = sn;
 		resetStrumline();
-
 		
 		updateText(receptorAnimArray[curSelectedNote.noteData][curSelected]);
 	}
@@ -607,7 +607,7 @@ class NoteSkinEditor extends MusicBeatState
 			playSplashAnim(key);
 		}
 	}
-
+	
 	function killNotes()
 	{
 		for (i in notes)
@@ -634,7 +634,7 @@ class NoteSkinEditor extends MusicBeatState
 					
 					var grp = new FlxTypedGroup();
 					add(grp);
-
+					
 					var note:Note = new Note(0, i, null, false, true);
 					note.ID = 0;
 					
@@ -652,7 +652,7 @@ class NoteSkinEditor extends MusicBeatState
 						// this formula is so bullshit. i really need to fix this bullshit bruh
 						(strumnote.height + (note.height * 2) + (sus.height * (handler.data.isPixel ? 1 : 3))) - 2
 					];
-
+					
 					for (p in [sus, susend, note])
 					{
 						p.skipScale = true;
@@ -660,7 +660,7 @@ class NoteSkinEditor extends MusicBeatState
 						p.alpha = 1;
 						if (!handler.data.isPixel) p.multSpeed = 3;
 						grp.add(p);
-
+						
 						var anim = fuck[p.ID][p.noteData];
 						
 						p.x = strumnote.x + ((strumnote.width - p.width) / 2);
@@ -668,7 +668,6 @@ class NoteSkinEditor extends MusicBeatState
 						
 						p.x += anim.x;
 						p.y += anim.y;
-
 					}
 					notes.push([note, sus, susend]);
 				}
@@ -686,27 +685,22 @@ class NoteSkinEditor extends MusicBeatState
 			}
 		}
 	}
-
+	
 	function playSplashAnim(data:Int)
 	{
-		final isQuant:Bool = ClientPrefs.noteSkin.toLowerCase().contains('quant');
 		var strum = playFields.members[0].members[data];
 		
 		var skin:String = noteSplashSkin;
-		var quantsAllowed = handler.data.hasQuants;
-		
-		if (isQuant && quantsAllowed) skin = 'QUANT$skin';
-		// trace(skin);
 		
 		var hue:Float = ClientPrefs.arrowHSV[data % 4][0] / 360;
 		var sat:Float = ClientPrefs.arrowHSV[data % 4][1] / 100;
 		var brt:Float = ClientPrefs.arrowHSV[data % 4][2] / 100;
 		
 		var splash:NoteSplash = noteSplashes.recycle(NoteSplash);
-		splash.setupNoteSplash(strum.x + script_SPLASHOffsets[data].x, strum.y + script_SPLASHOffsets[data].y, data, handler.data.noteSplashSkin, hue, sat, brt);
+		splash.setupNoteSplash(strum.x + script_SPLASHOffsets[data].x, strum.y + script_SPLASHOffsets[data].y, data, handler.data.noteSplashSkin, 4);
 		noteSplashes.add(splash);
 	}
-
+	
 	function killSplashes()
 	{
 		for (i in noteSplashes.members)
@@ -781,12 +775,12 @@ class NoteSkinEditor extends MusicBeatState
 	}
 	
 	function regenEverything()
-	{		
+	{
 		reloadUIElements();
 		
 		regenPlayfields();
 		regenSplashes();
-
+		
 		killNotes();
 		regenNotes();
 		
@@ -872,12 +866,11 @@ class NoteSkinEditor extends MusicBeatState
 	var opponentInput:FlxUIInputText;
 	var extraInput:FlxUIInputText;
 	var splashesInput:FlxUIInputText;
-	var hasQuantsCheck:FlxUICheckBox;
-	var isQuantsCheck:FlxUICheckBox;
 	var keysStepper:FlxUINumericStepper;
 	var scaleStepper:FlxUINumericStepper;
 	var nameInput:FlxUIInputText;
 	var splashesCheck:FlxUICheckBox;
+	var inEngineColoringCheck:FlxUICheckBox;
 	var skinDropDown:FlxUIDropDownMenuEx;
 	
 	function addTexturesUI()
@@ -922,16 +915,10 @@ class NoteSkinEditor extends MusicBeatState
 		reloadImage.x = (150 - reloadImage.width) / 2;
 		reloadImage.y = 180;
 		
-		hasQuantsCheck = new FlxUICheckBox(180, 27.5, null, null, "HAS quants?", 50);
-		hasQuantsCheck.checked = handler.data.hasQuants;
-		hasQuantsCheck.callback = () -> {
-			handler.data.hasQuants = hasQuantsCheck.checked;
-		}
-		
-		isQuantsCheck = new FlxUICheckBox(180, 57.5, null, null, "IS quants?", 50);
-		isQuantsCheck.checked = handler.data.isQuants;
-		isQuantsCheck.callback = () -> {
-			handler.data.isQuants = isQuantsCheck.checked;
+		inEngineColoringCheck = new FlxUICheckBox(180, 27.5, null, null, "In-engine coloring?", 50);
+		inEngineColoringCheck.checked = handler.data.inGameColoring;
+		inEngineColoringCheck.callback = () -> {
+			handler.data.inGameColoring = inEngineColoringCheck.checked;
 		}
 		
 		var lanesStepper:FlxUINumericStepper = new FlxUINumericStepper(180, 127.5, 1, 1, 1, 3);
@@ -956,7 +943,7 @@ class NoteSkinEditor extends MusicBeatState
 			else killSplashes();
 		}
 		
-		skinDropDown = new FlxUIDropDownMenuEx(hasQuantsCheck.x + hasQuantsCheck.width + 10, 90, FlxUIDropDownMenu.makeStrIdLabelArray([''], true), (skin) -> {
+		skinDropDown = new FlxUIDropDownMenuEx(inEngineColoringCheck.x + inEngineColoringCheck.width + 10, 90, FlxUIDropDownMenu.makeStrIdLabelArray([''], true), (skin) -> {
 			setupHelper(skinList[Std.parseInt(skin)]);
 			
 			regenEverything();
@@ -966,7 +953,7 @@ class NoteSkinEditor extends MusicBeatState
 		reloadDropdown();
 		skinDropDown.selectedLabel = name;
 		
-		nameInput = new FlxUIInputText(hasQuantsCheck.x + hasQuantsCheck.width + 10, 30, 100, name, 8);
+		nameInput = new FlxUIInputText(inEngineColoringCheck.x + inEngineColoringCheck.width + 10, 30, 100, name, 8);
 		blockPressWhileTypingOn.push(nameInput);
 		
 		var saveSkin:FlxButton = new FlxButton(nameInput.x, nameInput.y + 30, "Save Skin", saveSkin);
@@ -986,8 +973,7 @@ class NoteSkinEditor extends MusicBeatState
 		tab_group.add(extraInput);
 		tab_group.add(splashesInput);
 		tab_group.add(reloadImage);
-		tab_group.add(hasQuantsCheck);
-		tab_group.add(isQuantsCheck);
+		tab_group.add(inEngineColoringCheck);
 		tab_group.add(lanesStepper);
 		tab_group.add(keysStepper);
 		tab_group.add(scaleStepper);
@@ -1013,7 +999,7 @@ class NoteSkinEditor extends MusicBeatState
 		tab_group.name = "Animations";
 		
 		animationInputText = new FlxUIInputText(15, 85, 80, '', 8);
-		animationNameInputText = new FlxUIInputText(animationInputText.x, animationInputText.y + 35, 150, '', 8);		
+		animationNameInputText = new FlxUIInputText(animationInputText.x, animationInputText.y + 35, 150, '', 8);
 		animationColorInputText = new FlxUIInputText(animationNameInputText.x, animationNameInputText.y + 40, 250, '', 8);
 		
 		loopingCheck = new FlxUICheckBox(animationNameInputText.x + animationNameInputText.width + 20, animationNameInputText.y, null, null, "Does animation loop?");
@@ -1031,7 +1017,7 @@ class NoteSkinEditor extends MusicBeatState
 			}
 			anim.looping = loopingCheck.checked;
 		}
-
+		
 		animationDropDown = new FlxUIDropDownMenuEx(15, animationInputText.y - 55, FlxUIDropDownMenu.makeStrIdLabelArray([''], true), function(pressed:String) {
 			selectedAnimation = Std.parseInt(pressed);
 			var anim:Dynamic = null;
@@ -1107,7 +1093,7 @@ class NoteSkinEditor extends MusicBeatState
 						anim.xmlName = animationNameInputText.text;
 					}
 					anim.looping = loopingCheck.checked;
-
+					
 				case NOTES:
 					var anim = handler.data.noteAnimations[curSelectedNote.noteData][selectedAnimation];
 					
@@ -1129,7 +1115,6 @@ class NoteSkinEditor extends MusicBeatState
 					}
 					anim.looping = loopingCheck.checked;
 					reloadNotes();
-
 			}
 			reloadAnimationDropDown();
 			trace('$status animation.');
@@ -1185,12 +1170,11 @@ class NoteSkinEditor extends MusicBeatState
 				if (curSelectedNote != null)
 				{
 					for (anims in receptorAnimArray[curSelectedNote.noteData])
-						animations.push(anims);	
+						animations.push(anims);
 				}
 				else animations = ['static', 'pressed', 'confirm'];
 			case SPLASHES:
-				if (curSelected >= 0)
-				for (anims in handler.data.noteSplashAnimations)
+				if (curSelected >= 0) for (anims in handler.data.noteSplashAnimations)
 					animations.push(anims.anim);
 				else animations.push('note splash null');
 			case NOTES:
@@ -1342,12 +1326,11 @@ class NoteSkinEditor extends MusicBeatState
 					regenPlayfields();
 				case 'keys':
 					keys = Std.int(nums.value);
-					if (handler.data.receptorAnimations.length < keys)
-					for (i in handler.data.receptorAnimations.length...keys)
+					if (handler.data.receptorAnimations.length < keys) for (i in handler.data.receptorAnimations.length...keys)
 						handler.data.receptorAnimations.push(NoteSkinHelper.fallbackReceptorAnims);
 					if (handler.data.noteAnimations.length < keys) handler.data.noteAnimations.push(NoteSkinHelper.fallbackNote(handler.data.noteAnimations.length));
 					if (handler.data.noteSplashAnimations.length < keys) handler.data.noteSplashAnimations.push(NoteSkinHelper.fallbackSplash(handler.data.noteSplashAnimations.length));
-
+					
 					regenPlayfields();
 					reloadVectors();
 					killNotes();
@@ -1372,7 +1355,7 @@ class NoteSkinEditor extends MusicBeatState
 	{
 		var skinsLoaded:Map<String, Bool> = new Map();
 		
-		// #if MODS_ALLOWED
+		#if MODS_ALLOWED
 		skinList = [];
 		var directories:Array<String> = [
 			Paths.mods('noteskins/'),
@@ -1401,9 +1384,9 @@ class NoteSkinEditor extends MusicBeatState
 				}
 			}
 		}
-		// #else
-		// skinList = CoolUtil.coolTextFile(Paths.txt('noteskin_list'));
-		// #end
+		#else
+		skinList = CoolUtil.coolTextFile(Paths.txt('noteskinList'));
+		#end
 		
 		skinDropDown.setData(FlxUIDropDownMenu.makeStrIdLabelArray(skinList, true));
 		skinDropDown.selectedLabel = name;
@@ -1418,8 +1401,7 @@ class NoteSkinEditor extends MusicBeatState
 			opponentInput.text = handler.data.opponentSkin;
 			extraInput.text = handler.data.extraSkin;
 			splashesInput.text = handler.data.noteSplashSkin;
-			hasQuantsCheck.checked = handler.data.hasQuants;
-			isQuantsCheck.checked = handler.data.isQuants;
+			inEngineColoringCheck.checked = handler.data.inGameColoring;
 			splashesCheck.checked = handler.data.splashesEnabled;
 			keysStepper.value = keys;
 			nameInput.text = name;
@@ -1480,8 +1462,6 @@ class NoteSkinEditor extends MusicBeatState
 				"opponentSkin": handler.data.opponentSkin,
 				"extraSkin": handler.data.extraSkin,
 				"noteSplashSkin": handler.data.noteSplashSkin,
-				"hasQuants": handler.data.hasQuants,
-				"isQuants": handler.data.isQuants,
 				
 				"isPixel": handler.data.isPixel,
 				"pixelSize": handler.data.pixelSize,
@@ -1496,7 +1476,8 @@ class NoteSkinEditor extends MusicBeatState
 				
 				"singAnimations": handler.data.singAnimations,
 				"scale": handler.data.scale,
-				"splashesEnabled": handler.data.splashesEnabled
+				"splashesEnabled": handler.data.splashesEnabled,
+				"inGameColoring": handler.data.inGameColoring
 			}
 			
 		var data:String = Json.stringify(json, "\t");

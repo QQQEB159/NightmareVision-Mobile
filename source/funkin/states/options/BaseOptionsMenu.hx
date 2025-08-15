@@ -9,7 +9,7 @@ import flixel.FlxSprite;
 
 import funkin.objects.*;
 import funkin.backend.MusicBeatSubstate;
-import funkin.objects.character.Character;
+import funkin.objects.Character;
 
 class BaseOptionsMenu extends MusicBeatSubstate
 {
@@ -17,9 +17,9 @@ class BaseOptionsMenu extends MusicBeatSubstate
 	public var curSelected:Int = 0;
 	public var optionsArray:Array<Option>;
 	
-	public var grpOptions:FlxTypedGroup<Alphabet>;
+	public var grpOptions:FlxTypedGroup<Dynamic>; // fix this
 	public var checkboxGroup:FlxTypedGroup<CheckboxThingie>;
-	public var grpTexts:FlxTypedGroup<AttachedAlphabet>;
+	public var grpTexts:FlxTypedGroup<Dynamic>;
 	
 	public var bg:FlxSprite;
 	
@@ -29,6 +29,7 @@ class BaseOptionsMenu extends MusicBeatSubstate
 	
 	public var title:String;
 	public var rpcTitle:String;
+	public var titleText:Alphabet;
 	
 	public function new()
 	{
@@ -44,7 +45,6 @@ class BaseOptionsMenu extends MusicBeatSubstate
 		setUpScript('Options');
 		scriptGroup.set('this', this);
 		scriptGroup.set('title', title);
-		trace('options substate stuff whatever');
 		
 		bg = new FlxSprite().loadGraphic(Paths.image('menuDesat'));
 		bg.color = 0xFFea71fd;
@@ -53,10 +53,10 @@ class BaseOptionsMenu extends MusicBeatSubstate
 		add(bg);
 		
 		// avoids lagspikes while scrolling through menus!
-		grpOptions = new FlxTypedGroup<Alphabet>();
+		grpOptions = new FlxTypedGroup<Dynamic>();
 		add(grpOptions);
 		
-		grpTexts = new FlxTypedGroup<AttachedAlphabet>();
+		grpTexts = new FlxTypedGroup<Dynamic>();
 		add(grpTexts);
 		
 		checkboxGroup = new FlxTypedGroup<CheckboxThingie>();
@@ -66,7 +66,7 @@ class BaseOptionsMenu extends MusicBeatSubstate
 		descBox.alpha = 0.6;
 		add(descBox);
 		
-		var titleText:Alphabet = new Alphabet(0, 0, title, true, false, 0, 0.6);
+		titleText = new Alphabet(0, 0, title, true, false, 0, 0.6);
 		titleText.x += 60;
 		titleText.y += 40;
 		titleText.alpha = 0.4;
@@ -286,7 +286,7 @@ class BaseOptionsMenu extends MusicBeatSubstate
 			}
 		}
 		
-		if (boyfriend != null && boyfriend.animation.curAnim.finished)
+		if (boyfriend != null && boyfriend.animation.curAnim?.finished)
 		{
 			boyfriend.dance();
 		}
@@ -330,13 +330,16 @@ class BaseOptionsMenu extends MusicBeatSubstate
 		
 		for (item in grpOptions.members)
 		{
-			item.targetY = bullShit - curSelected;
+			if (item is Alphabet) item.targetY = bullShit - curSelected;
 			bullShit++;
 			
-			item.alpha = 0.6;
-			if (item.targetY == 0)
+			if (item is Alphabet)
 			{
-				item.alpha = 1;
+				item.set_alpha(0.6);
+				if (item.targetY == 0)
+				{
+					item.set_alpha(1);
+				}
 			}
 		}
 		for (text in grpTexts)
