@@ -1,5 +1,6 @@
 package funkin.states.editors.ui;
 
+#if desktop
 import haxe.ui.containers.dialogs.Dialogs.FileDialogTypes;
 import haxe.ui.containers.dialogs.SaveFileDialog;
 import haxe.ui.backend.SaveFileDialogBase;
@@ -137,3 +138,4 @@ class CharEditorUI extends FlxTypedSpriteContainer<FlxSprite>
 	
 	final _legend = '> Pressing [W, A, S, D] plays the corresponding sing animation.\nHolding shift while doing so will attempt to play alt animations\n\n> Pressing [Z, X] will move a frame forward/backward of the currently playing animation.\n\nPressing C to replay the current animation\n\n> Use the middle mouse wheel to drag the camera and zoom.\nAdditionally, [Q, E] can zoom in/out the camera.';
 }
+#end

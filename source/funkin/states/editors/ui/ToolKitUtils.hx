@@ -1,5 +1,6 @@
 package funkin.states.editors.ui;
 
+#if desktop
 import haxe.ui.notifications.NotificationType;
 import haxe.ui.notifications.NotificationManager;
 import haxe.ui.containers.ListView;
@@ -136,3 +137,5 @@ typedef DropDownItem =
 	id:String,
 	text:String
 }
+
+#end

@@ -71,8 +71,8 @@ class DebugDisplay extends Sprite
 		textField.multiline = true;
 		textField.text = "FPS: ";
 		
-		FlxG.game.addChild(textUnderlay);
-		FlxG.game.addChild(textField);
+		addChild(textUnderlay);
+		addChild(textField);
 		
 		this.x = x;
 		this.y = y;
@@ -117,6 +117,10 @@ class DebugDisplay extends Sprite
 		
 		textField.textColor = 0xFFFFFFFF;
 		if (currentFPS < FlxG.drawFramerate * 0.5) textField.textColor = 0xFFFF0000;
+		
+		#if mobile
+			fpsVar.positionFPS(10, 3, Math.min(w / FlxG.width, h / FlxG.height));
+			#end
 	}
 	
 	inline function get_memoryMegas():Float
@@ -126,5 +130,11 @@ class DebugDisplay extends Sprite
 		#else
 		return (cast openfl.system.System.totalMemoryNumber : UInt);
 		#end
+	}
+	
+    inline function positionFPS(X:Float, Y:Float, ?scale:Float = 1){
+ 		scaleX = scaleY = #if mobile (scale > 1 ? scale : 1) #else (scale < 1 ? scale : 1) #end;
+ 		x = FlxG.game.x + X;
+ 		y = FlxG.game.y + Y;
 	}
 }
