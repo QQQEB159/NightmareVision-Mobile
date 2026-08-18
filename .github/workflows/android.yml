@@ -35,10 +35,19 @@ jobs:
           haxelib run lime config ANDROID_SETUP true
           
       - name: Compile
-        run: haxelib run lime build android -ONLY_ARM64
+        run: haxelib run lime build android -ONLY_ARM64 -D HXCPP_KEEP_DEBUG_SYMBOLS
       
       - name: Publish Artifact
         uses: actions/upload-artifact@main
         with:
           name: buildAndroid
           path: export/release/android/bin/app/build/outputs/apk/release/*.apk
+      
+      - name: Publish Symbols
+        uses: actions/upload-artifact@main
+        if: always()
+        with:
+          name: android-symbols
+          path: |
+            export/release/android/bin/**/*.so
+            export/release/android/obj/**/*.so
