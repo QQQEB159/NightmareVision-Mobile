@@ -691,7 +691,8 @@ class Controls extends FlxActionSet
 				{
 					if (i.endsWith('-release') || i.endsWith('-press')) continue;
 					
-					customBind(i, keysMap.get(i));
+					final keys = keysMap.get(i);
+					if (keys != null) customBind(i, keys);
 				}
 				
 			case Duo(true):
