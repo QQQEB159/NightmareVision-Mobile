@@ -399,19 +399,7 @@ class ClientPrefs
 	 */
 	public static function refreshVSyncMode()
 	{
-		#if desktop
-		// Window vsync is a desktop-only feature; on mobile (Android/iOS) the swap
-		// interval is already configured by Lime at window creation, and calling
-		// SDL_GL_SetSwapInterval here can crash on some devices.
-		try
-		{
-			FlxG.stage.window.setVSyncMode(ClientPrefs.vsyncMode);
-		}
-		catch (_)
-		{
-			// ignore - vsync is not critical
-		}
-		#end
+		FlxG.stage.window.setVSyncMode(ClientPrefs.vsyncMode);
 	}
 	
 	inline public static function getGameplaySetting(name:String, defaultValue:Dynamic):Dynamic
