@@ -687,6 +687,13 @@ class Controls extends FlxActionSet
 				inline bindKeys(Control.SOFT_RELOAD, keysMap.get('soft_reload'));
 				inline bindKeys(Control.HARD_RELOAD, keysMap.get('hard_reload'));
 				
+				for (i in customActions.keys())
+				{
+					if (i.endsWith('-release') || i.endsWith('-press')) continue;
+					
+					customBind(i, keysMap.get(i));
+				}
+				
 			case Duo(true):
 				inline bindKeys(Control.UI_UP, [W]);
 				inline bindKeys(Control.UI_DOWN, [S]);
