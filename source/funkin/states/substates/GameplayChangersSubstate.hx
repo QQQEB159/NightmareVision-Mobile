@@ -142,6 +142,9 @@ class GameplayChangersSubstate extends MusicBeatSubstate
 		
 		changeSelection();
 		reloadCheckboxes();
+		
+		addTouchPad("LEFT_FULL", "A_B_C");
+		addTouchPadCamera();
 	}
 	
 	var nextAccept:Int = 5;
@@ -289,7 +292,7 @@ class GameplayChangersSubstate extends MusicBeatSubstate
 				}
 			}
 			
-			if (controls.RESET)
+			if (controls.RESET || touchPad.buttonC.justPressed)
 			{
 				for (i in 0...optionsArray.length)
 				{
@@ -334,7 +337,7 @@ class GameplayChangersSubstate extends MusicBeatSubstate
 		var val:Dynamic = option.getValue();
 		if (option.type == 'percent') val *= 100;
 		var def:Dynamic = option.defaultValue;
-		option.text = text.replace('%v', Std.string(val)).replace('%d', Std.string(def));
+		option.text = text.replace('%v', val).replace('%d', def);
 	}
 	
 	function clearHold()

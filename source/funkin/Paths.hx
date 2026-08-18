@@ -453,7 +453,7 @@ class Paths
 	 */
 	public static inline function mods(key:String = ''):String
 	{
-		return '$MODS_DIRECTORY/' + key;
+		return #if mobile Sys.getCwd() + #end '$MODS_DIRECTORY/' + key;
 	}
 	
 	/**

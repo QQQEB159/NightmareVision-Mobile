@@ -363,8 +363,10 @@ class WeekEditorState extends MusicBeatState
 		}
 		recalculateStuffPosition();
 		
+		#if DISCORD_ALLOWED
 		// Updating Discord Rich Presence
 		DiscordClient.changePresence("Week Editor", "Editting: " + weekFileName);
+		#end
 	}
 	
 	override function getEvent(id:String, sender:Dynamic, data:Dynamic, ?params:Array<Dynamic>)

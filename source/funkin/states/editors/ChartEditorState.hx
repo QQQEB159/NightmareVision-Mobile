@@ -353,9 +353,11 @@ class ChartEditorState extends haxe.ui.backend.flixel.UIState
 		// 	NoteSkinHelper.keys = song.keys;
 		// }
 		
+		#if DISCORD_ALLOWED
 		// Updating Discord Rich Presence
 		// DiscordClient.changePresence("Chart Editor", StringTools.replace(song.song, '-', ' '));
 		DiscordClient.changePresence("Chart Editor", "Uhm idk mane burp");
+		#end
 		
 		FlxG.cameras.reset();
 		camHUD = new FlxCamera();

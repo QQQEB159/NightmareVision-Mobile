@@ -71,7 +71,9 @@ class FreeplayState extends MusicBeatState
 		PlayState.isStoryMode = false;
 		WeekData.reloadWeekFiles(false);
 		
+		#if DISCORD_ALLOWED
 		DiscordClient.changePresence("In the Menus");
+		#end
 		
 		loadFreeplayData();
 		
@@ -165,6 +167,8 @@ class FreeplayState extends MusicBeatState
 		}
 		curDifficulty = Math.round(Math.max(0, Difficulty.defaultDifficulties.indexOf(lastDifficultyName)));
 		
+		addTouchPad("LEFT_FULL", "A_B_C_X_Y_Z_T");
+		
 		super.create();
 		scriptGroup.call('onCreate', []);
 	}
@@ -173,6 +177,8 @@ class FreeplayState extends MusicBeatState
 	{
 		changeSelection();
 		persistentUpdate = true;
+		removeTouchPad();
+		addTouchPad("LEFT_FULL", "A_B_C_X_Y_Z_T");
 		super.closeSubState();
 	}
 	
@@ -274,13 +280,13 @@ class FreeplayState extends MusicBeatState
 		positionHighscore();
 		
 		var shiftMult:Int = 1;
-		if (FlxG.keys.pressed.SHIFT) shiftMult = 3;
+		if (FlxG.keys.pressed.SHIFT || touchPad != null && touchPad.buttonZ.pressed) shiftMult = 3;
 		
 		if (freeplayTabs.length > 1)
 		{
-			if (FlxG.keys.justPressed.TAB)
+			if (FlxG.keys.justPressed.TAB || touchPad != null && touchPad.buttonT.justPressed)
 			{
-				if (FlxG.keys.pressed.SHIFT) changeTab(-1);
+				if (FlxG.keys.pressed.SHIFT || touchPad != null && touchPad.buttonZ.pressed) changeTab(-1);
 				else changeTab(1);
 				
 				changeDiff();
@@ -352,12 +358,12 @@ class FreeplayState extends MusicBeatState
 			FlxG.switchState(MainMenuState.new);
 		}
 		
-		if (FlxG.keys.justPressed.CONTROL)
+		if (FlxG.keys.justPressed.CONTROL || touchPad != null && touchPad.buttonC.justPressed)
 		{
-			persistentUpdate = false;
+			touchPad.active = touchPad.visible = persistentUpdate = false;
 			openSubState(new GameplayChangersSubstate());
 		}
-		else if (FlxG.keys.justPressed.SPACE)
+		else if (FlxG.keys.justPressed.SPACE || touchPad != null && touchPad.buttonX.justPressed)
 		{
 			if (instPlaying != curSelected)
 			{
@@ -410,7 +416,7 @@ class FreeplayState extends MusicBeatState
 			
 			FlxTween.cancelTweensOf(bg, ['color']);
 			
-			if (FlxG.keys.pressed.SHIFT)
+			if (FlxG.keys.pressed.SHIFT || touchPad != null && touchPad.buttonZ.pressed)
 			{
 				FlxG.switchState(ChartEditorState.new);
 			}
@@ -423,9 +429,9 @@ class FreeplayState extends MusicBeatState
 			
 			destroyFreeplayVocals();
 		}
-		else if (controls.RESET)
+		else if (controls.RESET || touchPad != null && touchPad.buttonY.justPressed)
 		{
-			persistentUpdate = false;
+			touchPad.active = touchPad.visible = persistentUpdate = false;
 			openSubState(new ResetScoreSubState(songs[curSelected].songName, curDifficulty, songs[curSelected].songCharacter));
 			FlxG.sound.play(Paths.sound('scrollMenu'));
 		}
@@ -528,8 +534,8 @@ class FreeplayState extends MusicBeatState
 					addSong(name, [name, icon, color]);
 				}
 			}
-		}
-		else Mods.currentModDirectory = tab.directory;
+		} 
+		else Mods.currentModDirectory = tab.directory; 
 		for (song in tab.songs)
 			addSong(song);
 	}

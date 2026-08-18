@@ -160,7 +160,7 @@ class NoteOffsetState extends MusicBeatState
 		barPercent = ClientPrefs.noteOffset;
 		updateNoteDelay();
 		
-		timeBarBG = new FlxSprite(0, timeTxt.y + 8).loadGraphic(Paths.image('ui/timeBar'));
+		timeBarBG = new FlxSprite(0, timeTxt.y + 8).loadGraphic(Paths.image('UI/timeBar'));
 		timeBarBG.setGraphicSize(Std.int(timeBarBG.width * 1.2));
 		timeBarBG.updateHitbox();
 		timeBarBG.cameras = [camHUD];
@@ -301,7 +301,7 @@ class NoteOffsetState extends MusicBeatState
 				}
 			}
 			
-			if (controls.RESET)
+			if (controls.RESET || touchPad.buttonC.justPressed)
 			{
 				for (i in 0...ClientPrefs.comboOffset.length)
 				{
@@ -339,7 +339,7 @@ class NoteOffsetState extends MusicBeatState
 				updateNoteDelay();
 			}
 			
-			if (controls.RESET)
+			if (controls.RESET || touchPad.buttonC.justPressed)
 			{
 				holdTime = 0;
 				barPercent = 0;
@@ -360,6 +360,7 @@ class NoteOffsetState extends MusicBeatState
 			
 			FunkinSound.playMusic(Paths.music('freakyMenu'));
 			FlxG.switchState(OptionsState.new);
+			FlxG.mouse.visible = false;
 		}
 		
 		super.update(elapsed);
@@ -462,6 +463,8 @@ class NoteOffsetState extends MusicBeatState
 		timeTxt.text = 'Current offset: ${Math.floor(barPercent)}  ms';
 	}
 	
+	final buttonAccept:String = controls.mobileC ? 'A' : 'Accept';
+	
 	function updateMode()
 	{
 		rating.visible = onComboMenu;
@@ -473,7 +476,10 @@ class NoteOffsetState extends MusicBeatState
 		timeTxt.visible = !onComboMenu;
 		beatText.visible = !onComboMenu;
 		
-		changeModeText.text = onComboMenu ? '< Combo Offset (Press Accept to Switch) >' : '< Note/Beat Delay (Press Accept to Switch) >';
+		removeTouchPad();
+		addTouchPad(onComboMenu ? "NONE" : "LEFT_RIGHT", "A_B_C");
+		addTouchPadCamera();
+		changeModeText.text = onComboMenu ? '< Combo Offset (Press $buttonAccept to Switch) >' : '< Note/Beat Delay (Press $buttonAccept to Switch) >';
 		
 		changeModeText.text = changeModeText.text.toUpperCase();
 		FlxG.mouse.visible = onComboMenu;

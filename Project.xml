@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <project>
     <!-- APP SETTINGS -->
-    <app title="Friday Night Funkin" file="Friday Night Funkin" packageName="com.nmvTeam.nightmareEngine" package="com.nmvTeam.nightmareEngine" main="Main" version="0.2.7" company="nmvTeam"/>
+    <app title="Friday Night Funkin" file="NightmareVision" packageName="com.nmvTeam.nightmareEngine" package="com.nmvTeam.nightmareEngine" main="Main" version="0.2.7" company="nmvTeam"/>
 
     <window width="1280" height="720" fps="60" background="#000000" hardware="true" vsync="false"/>
     <window if="desktop" orientation="landscape" fullscreen="false" resizable="true" vsync="false"/>
 	<window unless="mac" allow-high-dpi="true"/>
 
-    <window if="mobile" orientation="landscape" fullscreen="true" width="0" height="0" resizable="false"/>
+    <window if="mobile" orientation="landscape" fullscreen="true" resizable="false" allow-shaders="true" require-shaders="true" />
 
     <!-- ENGINE CONFIGS -->
 
-    <define name="MODS_ALLOWED" if="desktop"/>
+    <define name="MODS_ALLOWED" if="desktop || mobile"/>
     <define name="VIDEOS_ALLOWED" if="cpp"/>
     <define name="DISCORD_ALLOWED" if="cpp" unless="android || ios"/>
 
@@ -104,8 +104,21 @@
     	<haxedef name="HXCPP_CHECK_POINTER"/>
     	<haxedef name="HXCPP_STACK_LINE"/>
     	<haxedef name="HXCPP_STACK_TRACE"/>
+    	<haxedef name="HXCPP_CATCH_SEGV" />
 	</section>
  
+    <!-- Allow Access to Engine Files in MOBILE -->
+	<haxedef name="SHARE_MOBILE_FILES" if="mobile" />
+	<haxedef name="openfl_dpi_aware" />
+	<haxedef name="openfl_pool_events" />
+	
+	<!-- Category Type for Apple Systems -->
+	<config:ios category_type="public.app-category.music-games" />
+	<config:mac category_type="public.app-category.music-games" />
+	
+	<!-- Do whatever you want I'm tired uninstall and install everytime -->
+	<certificate path="key.keystore" password="psychengine" alias="psychport" alias-password="psychengine" if="android" unless="debug" />
+    
     <!--Remove the legacy health system-->
     <haxedef name="FLX_NO_HEALTH"/>
 

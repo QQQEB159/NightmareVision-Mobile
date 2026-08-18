@@ -30,6 +30,11 @@ class OptionsState extends MusicBeatState
 	
 	public function openSelectedSubstate(label:String)
 	{
+		if (label != "Adjust Delay and Combo")
+		{
+	        persistentUpdate = false;
+			removeTouchPad();
+		}
 		switch (label)
 		{
 			case 'Notes':
@@ -54,7 +59,9 @@ class OptionsState extends MusicBeatState
 	
 	override function create()
 	{
+		#if DISCORD_ALLOWED
 		DiscordClient.changePresence("Options Menu");
+		#end
 		
 		initStateScript();
 		
@@ -66,6 +73,13 @@ class OptionsState extends MusicBeatState
 		add(bg);
 		
 		scriptGroup.set('bg', bg);
+		
+		var tipText:FlxText = new FlxText(150, FlxG.height - 24, 0, 'Press C to Go Mobile Options Menu', 16);
+		tipText.setFormat("VCR OSD Mono", 17, FlxColor.WHITE, LEFT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
+		tipText.borderSize = 1.25;
+		tipText.scrollFactor.set();
+		tipText.antialiasing = ClientPrefs.globalAntialiasing;
+		add(tipText);
 		
 		grpOptions = new FlxTypedGroup<Alphabet>();
 		add(grpOptions);
@@ -83,6 +97,8 @@ class OptionsState extends MusicBeatState
 		selectorRight = new Alphabet(0, 0, '<', true);
 		add(selectorRight);
 		
+		addTouchPad("UP_DOWN", "A_B_C");
+		
 		changeSelection();
 		
 		super.create();
@@ -93,6 +109,9 @@ class OptionsState extends MusicBeatState
 	override function closeSubState()
 	{
 		ClientPrefs.flush();
+		persistentUpdate = true;
+		removeTouchPad();
+		addTouchPad("UP_DOWN", "A_B_C");
 		
 		super.closeSubState();
 		justLeftSubState = true;
@@ -125,6 +144,12 @@ class OptionsState extends MusicBeatState
 		if (controls.ACCEPT)
 		{
 			openSelectedSubstate(options[curSelected]);
+		}
+		
+		if (touchPad != null && touchPad.buttonC.justPressed) 
+	    {
+			touchPad.active = touchPad.visible = persistentUpdate = false;
+			openSubState(new funkin.mobile.states.options.MobileOptionsSubState());
 		}
 		
 		scriptGroup.call('onUpdatePost', [elapsed]);

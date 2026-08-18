@@ -59,7 +59,6 @@ class FpsDisplayMode
 /**
  * A FL Sprite that displays the current FPS and GC memory
  */
-@:nullSafety
 class DebugDisplay extends Sprite
 {
 	public static var instance:Null<DebugDisplay> = null;
@@ -250,5 +249,12 @@ class DebugDisplay extends Sprite
 	inline function get_taskMemory():Float
 	{
 		return external.Native.getTaskMemory();
+	}
+	
+	inline function positionFPS(X:Float, Y:Float, ?scale:Float = 1)
+	{
+ 		scaleX = scaleY = #if mobile (scale > 1 ? scale : 1) #else (scale < 1 ? scale : 1) #end;
+ 		x = FlxG.game.x + X;
+ 		y = FlxG.game.y + Y;
 	}
 }

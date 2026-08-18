@@ -38,6 +38,7 @@ import funkin.game.modchart.*;
 import funkin.game.StoryMeta;
 import funkin.input.InputSystem;
 import funkin.input.InputEvent;
+import funkin.input.Controls.Device;
 import funkin.audio.SyncedFlxSoundGroup;
 import funkin.data.SongMetaData;
 #if VIDEOS_ALLOWED
@@ -780,6 +781,19 @@ class PlayState extends MusicBeatState
 		
 		scripts.call('preNoteGeneration', []);
 		
+		input = new InputSystem(controls);
+		input.addEventListener(InputEvent.INPUT_PRESSED, onInputPress);
+		input.addEventListener(InputEvent.INPUT_RELEASED, onInputRelease);
+		
+		#if !android
+		addTouchPad("NONE", "P");
+		addTouchPadCamera();
+		touchPad.visible = true;
+		#end
+		addMobileControls();
+		mobileControls.onButtonDown.add(input.onButtonDown);
+		mobileControls.onButtonUp.add(input.onButtonUp);
+		
 		if (genNotesBeforeCountdown) generatePlayfields();
 		generateSong(SONG.song);
 		
@@ -824,10 +838,6 @@ class PlayState extends MusicBeatState
 		
 		// Updating Discord Rich Presence.
 		resetDiscordRPC();
-		
-		input = new InputSystem(controls);
-		input.addEventListener(InputEvent.INPUT_PRESSED, onInputPress);
-		input.addEventListener(InputEvent.INPUT_RELEASED, onInputRelease);
 		
 		Conductor.safeZoneOffset = (ClientPrefs.safeFrames / 60) * 1000;
 		
@@ -1025,7 +1035,7 @@ class PlayState extends MusicBeatState
 			if (!genNotesBeforeCountdown) generatePlayfields();
 			
 			new FlxTimer().start(countdownDelay, (t:FlxTimer) -> {
-				startedCountdown = true;
+				startedCountdown = mobileControls.instance.visible = true;
 				Conductor.songPosition = 0;
 				Conductor.songPosition -= Conductor.crotchet * 5;
 				scripts.call('onCountdownStarted', []);
@@ -1171,8 +1181,10 @@ class PlayState extends MusicBeatState
 		audio.volume = 1 * volumeMult;
 		audio.play();
 		
+		#if DISCORD_ALLOWED
 		// Updating Discord Rich Presence (with Time Left)
 		if (automatedDiscord) DiscordClient.changePresence(rpcDescription, rpcSongName + ' ' + rpcDifficulty, null, true, songLength);
+		#end
 		
 		scripts.set('songLength', songLength);
 		scripts.call('onSongStart', []);
@@ -1666,10 +1678,12 @@ class PlayState extends MusicBeatState
 	 */
 	inline function resetDiscordRPC(showTime:Bool = false)
 	{
+		#if DISCORD_ALLOWED
 		if (!automatedDiscord) return;
 		
 		if (!showTime) DiscordClient.changePresence(rpcDescription, rpcSongName + ' ' + rpcDifficulty);
 		else DiscordClient.changePresence(rpcDescription, rpcSongName + ' ' + rpcDifficulty, null, true, songLength - Conductor.songPosition - ClientPrefs.noteOffset);
+		#end
 	}
 	
 	function resyncVocals():Void
@@ -1708,7 +1722,7 @@ class PlayState extends MusicBeatState
 		super.update(elapsed);
 		input.update();
 		
-		if (controls.PAUSE && startedCountdown && canPause)
+		if ((#if android FlxG.android.justReleased.BACK || #end controls.PAUSE) && startedCountdown && canPause)
 		{
 			if (scripts.call('onPause', []) != ScriptConstants.STOP_FUNC) openPauseMenu();
 		}
@@ -2027,7 +2041,9 @@ class PlayState extends MusicBeatState
 		if (audio.inst != null) audio.pause();
 		openSubState(new PauseSubState());
 		
+		#if DISCORD_ALLOWED
 		if (automatedDiscord) DiscordClient.changePresence(rpcPausedDescription, 'Paused');
+		#end
 	}
 	
 	function openChartEditor():Void
@@ -2042,7 +2058,9 @@ class PlayState extends MusicBeatState
 		FlxG.switchState(FlxG.keys.pressed.SHIFT ? ChartEditorState.new : OLDChartEditorState.new);
 		chartingMode = true;
 		
+		#if DISCORD_ALLOWED
 		if (automatedDiscord) DiscordClient.changePresence('Chart Editor');
+		#end
 	}
 	
 	function openCharacterEditor():Void
@@ -2055,7 +2073,9 @@ class PlayState extends MusicBeatState
 		
 		FlxG.switchState(() -> new CharacterEditorState(SONG.player2, true));
 		
+		#if DISCORD_ALLOWED
 		if (automatedDiscord) DiscordClient.changePresence("Character Editor", null, null, true);
+		#end
 	}
 	
 	public function updateScoreBar(miss:Bool = false):Void
@@ -2091,7 +2111,9 @@ class PlayState extends MusicBeatState
 				openSubState(new GameOverSubstate(char));
 				
 				// Game Over doesn't get his own variable because it's only used here
+				#if DISCORD_ALLOWED
 				if (automatedDiscord) DiscordClient.changePresence("Game Over - " + rpcDescription, rpcSongName);
+				#end
 				
 				isDead = true;
 				
@@ -2599,6 +2621,8 @@ class PlayState extends MusicBeatState
 		deathCounter = 0;
 		seenCutscene = false;
 		
+		mobileControls.instance.visible = #if !android touchPad.visible = #end false;
+		
 		final ret:Dynamic = scripts.call('onEndSong', []);
 		
 		if (ret != ScriptConstants.STOP_FUNC && !transitioning)
@@ -2793,6 +2817,7 @@ class PlayState extends MusicBeatState
 		
 		scripts.call('onKeyPress', [key]);
 		scripts.call('onInputPress', [key]);
+		if (event.device == Device.Touch) scripts.call('onButtonPress', [key]);
 	}
 	
 	function onInputRelease(event:InputEvent):Void
@@ -2819,6 +2844,7 @@ class PlayState extends MusicBeatState
 			}
 			scripts.call('onKeyRelease', [key]);
 			scripts.call('onInputRelease', [key]);
+			if (event.device == Device.Touch) scripts.call('onButtonRelease', [key]);
 		}
 	}
 	
@@ -2832,6 +2858,10 @@ class PlayState extends MusicBeatState
 		var right = controls.NOTE_RIGHT;
 		var down = controls.NOTE_DOWN;
 		var left = controls.NOTE_LEFT;
+		var dodge = controls.NOTE_DODGE;
+		
+		var controlHoldArray:Array<Bool> = [left, down, up, right, dodge];
+		
 		if (startedCountdown && !boyfriend.stunned && generatedMusic)
 		{
 			// rewritten inputs???
@@ -2842,7 +2872,7 @@ class PlayState extends MusicBeatState
 				{
 					if (daNote.isSustainNote
 						&& !daNote.blockHit
-						&& (input.inputPressed(daNote.noteData) || (daNote.wasGoodHit && daNote.parent.coyoteProgress < 1))
+						&& ((input.inputPressed(daNote.noteData) || controlHoldArray[daNote.noteData]) || (daNote.wasGoodHit && daNote.parent.coyoteProgress < 1))
 						&& Conductor.songPosition >= daNote.strumTime
 						&& !daNote.tooLate
 						&& !daNote.wasGoodHit)
@@ -2858,7 +2888,7 @@ class PlayState extends MusicBeatState
 					if (daNote.isSustainNote
 						&& !daNote.blockHit
 						&& !daNote.ignoreNote
-						&& !input.inputPressed(daNote.noteData)
+						&& !(input.inputPressed(daNote.noteData) || controlHoldArray[daNote.noteData])
 						&& !endingSong
 						&& !daNote.wasGoodHit)
 					{
@@ -2882,7 +2912,7 @@ class PlayState extends MusicBeatState
 				}
 			});
 			
-			if (!left && !down && !up && !right)
+			if (!left && !down && !up && !right && !dodge)
 			{
 				for (field in playFields)
 				{

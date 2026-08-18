@@ -167,6 +167,9 @@ class ControlsSubState extends MusicBeatSubstate
 		scriptGroup.set('resetGamepadLabel', resetGamepadLabel);
 		scriptGroup.set('bg', bg);
 		scriptGroup.call('onCreatePost', []);
+		
+		addTouchPad("LEFT_FULL", "B");
+		addTouchPadCamera();
 	}
 	
 	function refreshOptionsList()
@@ -256,6 +259,7 @@ class ControlsSubState extends MusicBeatSubstate
 							ClientPrefs.keyBinds = ClientPrefs.defaultKeys.copy();
 						case Gamepad(_):
 							ClientPrefs.gamepadBinds = ClientPrefs.defaultGamepadBinds.copy();
+						case Touch: // touch isn't rebindable
 					}
 					for (option in optionsList)
 						option.refreshAll(device);
@@ -274,6 +278,7 @@ class ControlsSubState extends MusicBeatSubstate
 				{
 					case Keys: FlxG.keys.firstJustPressed();
 					case Gamepad(id): FlxG.gamepads.getByID(id).firstJustPressedID();
+					case Touch: -1;
 				}
 				if (inputID > -1)
 				{
@@ -303,6 +308,7 @@ class ControlsSubState extends MusicBeatSubstate
 			{
 				case Keys: resetKeysLabel;
 				case Gamepad(_): resetGamepadLabel;
+				case Touch: null;
 			}
 		}
 		
@@ -496,6 +502,7 @@ class ControlsOption extends FlxSpriteContainer
 		{
 			case Keys: InputFormatter.getKeyName(inputID);
 			case Gamepad(id): FlxG.gamepads.getByID(id).getInputLabel(inputID).toUpperCase();
+			case Touch: '';
 		});
 		
 		binds.members[index].alpha = alpha;
@@ -545,6 +552,7 @@ class ControlsOption extends FlxSpriteContainer
 		{
 			case Keys: ClientPrefs.keyBinds.get(action);
 			case Gamepad(_): ClientPrefs.gamepadBinds.get(action);
+			case Touch: [];
 		}
 	}
 }

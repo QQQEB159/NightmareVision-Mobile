@@ -116,7 +116,9 @@ class CreditsState extends MusicBeatState
 	
 	override function create()
 	{
+		#if DISCORD_ALLOWED
 		DiscordClient.changePresence("In the Menus");
+		#end
 		
 		persistentUpdate = true;
 		
@@ -183,6 +185,9 @@ class CreditsState extends MusicBeatState
 		add(descText);
 		
 		changeSelection();
+		
+		addTouchPad("UP_DOWN", "A_B");
+		
 		super.create();
 		
 		scriptGroup.call('onCreate');

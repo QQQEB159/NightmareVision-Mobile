@@ -32,6 +32,8 @@ class ModsState extends MusicBeatState
 	
 	override function create()
 	{
+		super.create();
+		
 		modList = [];
 		FunkinSound.playMusic(Paths.music("freakyMenu"));
 		
@@ -92,6 +94,8 @@ class ModsState extends MusicBeatState
 		add(new FlxSprite(685, 645).loadGraphic(Paths.image("menus/mods/menuborder2")));
 		
 		changeDir(0);
+		
+		addTouchPad("UP_DOWN", "A_B_T");
 	}
 	
 	override public function update(elapsed)
@@ -108,7 +112,7 @@ class ModsState extends MusicBeatState
 		}
 		if (controls.ACCEPT) toggleMod();
 		
-		if (FlxG.keys.justPressed.TAB) makeTopMod(modList[curDir]);
+		if (FlxG.keys.justPressed.TAB || touchPad.buttonT.justPressed) makeTopMod(modList[curDir]);
 		if (controls.BACK)
 		{
 			Mods.currentModDirectory = topMod;
@@ -128,6 +132,8 @@ class ModsState extends MusicBeatState
 				new MainMenuState();
 			});
 		}
+		
+		super.update(elapsed);
 	}
 	
 	function changeDir(change:Int = 0)

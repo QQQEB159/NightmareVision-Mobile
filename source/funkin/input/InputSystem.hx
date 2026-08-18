@@ -166,6 +166,54 @@ class InputSystem extends EventDispatcher implements flixel.util.IFlxDestroyable
 	}
 	
 	/**
+	 * Handles a mobile touch button press.
+	 * 
+	 * The button is converted into an `InputEvent` and queued for dispatch on the next `update()`.
+	 * Extra buttons (and any button without a note direction ID) are ignored.
+	 * @param button The touch button that was just pressed
+	 */
+	public function onButtonDown(button:TouchButton):Void
+	{
+		final noteData:Int = getNoteData(button);
+		if (noteData < 0 || !button.justPressed) return;
+		
+		awaitingEvents.push(new InputEvent(InputEvent.INPUT_PRESSED, false, true, noteData, Device.Touch, noteData, System.getTimer()));
+	}
+	
+	/**
+	 * Handles a mobile touch button release.
+	 * 
+	 * The button is converted into an `InputEvent` and queued for dispatch on the next `update()`.
+	 * Extra buttons (and any button without a note direction ID) are ignored.
+	 * @param button The touch button that was released
+	 */
+	public function onButtonUp(button:TouchButton):Void
+	{
+		final noteData:Int = getNoteData(button);
+		if (noteData < 0) return;
+		
+		awaitingEvents.push(new InputEvent(InputEvent.INPUT_RELEASED, false, true, noteData, Device.Touch, noteData, System.getTimer()));
+	}
+	
+	/**
+	 * Extracts the note direction (0-3) from a touch button's IDs.
+	 * Returns -1 if the button has no note direction (e.g. extra buttons).
+	 */
+	function getNoteData(button:TouchButton):Int
+	{
+		if (button.IDs == null) return -1;
+		
+		for (id in button.IDs)
+		{
+			// MobileInputID is Int-backed; map it back to its enum name to detect note directions.
+			final name = MobileInputID.toStringMap[id];
+			if (name != null && name.startsWith("NOTE")) return id;
+		}
+		
+		return -1;
+	}
+	
+	/**
 	 * Dispatches all awaiting input events
 	 */
 	@:nullSafety(Off)
@@ -274,12 +322,14 @@ class InputSystem extends EventDispatcher implements flixel.util.IFlxDestroyable
 				{
 					case Keys: justPressedKeyInputs;
 					case Gamepad(_): justPressedGamepadInputs;
+					case Touch: [];
 				}
 			case InputEvent.INPUT_RELEASED:
 				switch device
 				{
 					case Keys: justReleasedKeyInputs;
 					case Gamepad(_): justReleasedGamepadInputs;
+					case Touch: [];
 				}
 			default:
 				throw "Invalid Event";

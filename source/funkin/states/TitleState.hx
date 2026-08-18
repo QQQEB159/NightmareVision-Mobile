@@ -130,7 +130,7 @@ class TitleState extends MusicBeatState
 	{
 		if (FlxG.sound.music != null) Conductor.songPosition = FlxG.sound.music.time;
 		
-		final pressedEnter:Bool = FlxG.gamepads.lastActive?.justPressed.START || FlxG.keys.justPressed.ENTER || controls.ACCEPT;
+		final pressedEnter:Bool = FlxG.gamepads.lastActive?.justPressed.START || FlxG.keys.justPressed.ENTER || controls.ACCEPT || TouchUtil.justPressed;
 		
 		if (skippedIntro)
 		{

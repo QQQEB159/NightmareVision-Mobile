@@ -7,7 +7,11 @@ package external.memory;
  * @author Leather128 (Haxe Bindings) - David Robert Nadeau (Original C Header)
  * even if the author is above this, thank you Leather128 for the Haxe Bindings!
  */
+#if ios
+@:buildXml('<include name="/Users/runner/work/NightmareVision-Mobile/NightmareVision-Mobile/source/external/memory/build.xml" />')
+#else
 @:buildXml('<include name="../../../../source/external/memory/build.xml" />')
+#end
 @:include("Memory.h")
 extern class Memory
 {

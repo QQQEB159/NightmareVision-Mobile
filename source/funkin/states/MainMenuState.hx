@@ -42,7 +42,9 @@ class MainMenuState extends MusicBeatState
 		Mods.pushGlobalMods();
 		#end
 		
+		#if DISCORD_ALLOWED
 		DiscordClient.changePresence("In the Menus");
+		#end
 		
 		FlxG.cameras.reset();
 		
@@ -109,6 +111,8 @@ class MainMenuState extends MusicBeatState
 		
 		changeSelection();
 		
+		addTouchPad("UP_DOWN", "A_B_E");
+		
 		super.create();
 		
 		scriptGroup.call('onCreate', []);
@@ -173,7 +177,7 @@ class MainMenuState extends MusicBeatState
 					menuItems.forEachAlive(item -> if (item != selectedObj) FlxTween.tween(item, {alpha: 0}, 0.4, {ease: FlxEase.quadOut}));
 				}
 			}
-			else if (FlxG.keys.anyJustPressed(debugKeys))
+			else if (FlxG.keys.anyJustPressed(debugKeys) || touchPad != null && touchPad.buttonE.justPressed)
 			{
 				canInteract = true;
 				FlxG.switchState(MasterEditorMenu.new);

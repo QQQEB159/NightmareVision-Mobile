@@ -57,7 +57,7 @@ class GreenScreenShader extends FlxShader // https://www.shadertoy.com/view/4dX3
     	vec4 rColor = flixel_texture2D(bitmap, uv);
       vec3 color = rColor.rgb * rColor.a;
 
-    	float incrustation = 1-chromaKey(color);
+    	float incrustation = 1.0-chromaKey(color);
 
     	gl_FragColor = vec4(color*incrustation, incrustation);
     }

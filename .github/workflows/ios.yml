@@ -1,0 +1,47 @@
+name: IOS Build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+  workflow_dispatch:
+jobs:
+  buildIOS:
+    name: buildIOS
+    runs-on: macos-26
+    steps:
+      - name: Checkout
+        uses: actions/checkout@main
+        with:
+          submodules: true
+
+      - name: Setup Haxe
+        uses: ShadowEngineTeam/setup-haxe@main
+        with:
+          haxe-version: 4.3.7
+      
+      - name: Install Haxelib
+        run: |
+          haxelib install hxpkg
+          haxelib run hxpkg install
+          
+      - name: Compile
+        run: haxelib run lime build ios -nosign -final
+      
+      - name: Making ipa file
+        run: |
+          brew install ldid
+          cd export/release/ios/build/Release-iphoneos/NightmareVision.app
+          ldid -S../../../NightmareVision/NightmareVision.entitlements NightmareVision
+          cd ..
+          mkdir Payload
+          mv NightmareVision.app Payload
+          zip -r NightmareVision.ipa Payload
+      
+      - name: Publish Artifact
+        uses: actions/upload-artifact@main
+        with:
+          name: buildIOS
+          path: export/release/ios/build/Release-iphoneos/*.ipa
