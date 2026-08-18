@@ -34,7 +34,7 @@ class FullScreenPlugin extends FlxBasic
 	{
 		super.update(elapsed);
 		
-		if (Controls.instance.FULLSCREEN)
+		if (Controls.instance != null && Controls.instance.FULLSCREEN)
 		{
 			// i was gonna change the actual key to fullscreen but thats like
 			// really deep

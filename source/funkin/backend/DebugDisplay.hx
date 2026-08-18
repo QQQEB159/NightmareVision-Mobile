@@ -162,7 +162,7 @@ class DebugDisplay extends Sprite
 		while (times[0] < now - 1000)
 			times.shift();
 			
-		if (Controls.instance.SWITCH_DEBUG_DISPLAY)
+		if (Controls.instance != null && Controls.instance.SWITCH_DEBUG_DISPLAY)
 		{
 			final fpsTypeArray:Array<String> = ['Simple', 'Advanced', 'Disabled'];
 			ClientPrefs.fpsDisplayType = fpsTypeArray[FlxMath.wrap(fpsTypeArray.indexOf(ClientPrefs.fpsDisplayType) + 1, 0, fpsTypeArray.length - 1)];

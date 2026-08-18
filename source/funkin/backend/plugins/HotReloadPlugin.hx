@@ -43,7 +43,7 @@ class HotReloadPlugin extends FlxBasic
 		if (!ClientPrefs.inDevMode) return;
 		#end
 		
-		if (Controls.instance.SOFT_RELOAD)
+		if (Controls.instance != null && Controls.instance.SOFT_RELOAD)
 		{
 			FlxTransitionableState.skipNextTransIn = FlxTransitionableState.skipNextTransOut = true;
 			FlxG.resetState();
@@ -51,7 +51,7 @@ class HotReloadPlugin extends FlxBasic
 			Mods.applyModConfig();
 		}
 		
-	if (Controls.instance.HARD_RELOAD)
+	if (Controls.instance != null && Controls.instance.HARD_RELOAD)
 		{
 			FlxG.signals.preStateCreate.addOnce((state) -> {
 				FunkinAssets.cache.clearStoredMemory();
