@@ -23,6 +23,8 @@ class Init extends FlxState
 		
 		ClientPrefs.load();
 		
+		MobileData.init();
+		
 		funkin.data.Highscore.load();
 		
 		if (FlxG.save.data.weekCompleted != null) funkin.states.StoryMenuState.weekCompleted = FlxG.save.data.weekCompleted;
@@ -78,8 +80,6 @@ class Init extends FlxState
 		funkin.backend.plugins.ModPlugin.instance.populate();
 		
 		FunkinAssets.cache.currentTrackedSounds.addPermanentKey('assets/music/freakyMenu.ogg');
-		
-		MobileData.init();
 		
 		super.create();
 		
